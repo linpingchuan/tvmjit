@@ -3,7 +3,7 @@
 ** Copyright (C) 2013-2014 Francois Perrad.
 **
 ** Major parts taken verbatim from the LuaJIT.
-** Copyright (C) 2005-2014 Mike Pall.
+** Copyright (C) 2005-2015 Mike Pall.
 */
 
 #include <stdio.h>

@@ -3,7 +3,7 @@
 ** Copyright (C) 2013-2014 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
-** Copyright (C) 2005-2014 Mike Pall.
+** Copyright (C) 2005-2015 Mike Pall.
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio.
 */
@@ -396,6 +396,7 @@ int lj_lex_setup(lua_State *L, LexState *ls)
   ls->vtop = 0;
   ls->bcstack = NULL;
   ls->sizebcstack = 0;
+  ls->token = 0;
   ls->linenumber = 1;
   ls->lastline = 1;
   lj_str_resizebuf(ls->L, &ls->sb, LJ_MIN_SBUF);

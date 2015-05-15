@@ -5,6 +5,7 @@ features:
 
 platform:
         - port msvcbuild.bat
+        - port psvitabuild.bat
         - port xedkbuild.bat
 
 doc:

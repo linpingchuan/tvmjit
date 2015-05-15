@@ -3,7 +3,7 @@
 ** Copyright (C) 2013-2014 Francois Perrad.
 **
 ** Major parts taken verbatim from the LuaJIT.
-** Copyright (C) 2005-2014 Mike Pall.
+** Copyright (C) 2005-2015 Mike Pall.
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio.
 */
@@ -307,17 +307,17 @@ static int loadjitmodule(lua_State *L)
   lua_concat(L, 2);
   if (lua_pcall(L, 1, 1, 0)) {
     const char *msg = lua_tostring(L, -1);
-    if (msg && !strncmp(msg, "module ", 7)) {
-    err:
-      l_message(progname,
-		"unknown luaJIT command or jit.* modules not installed");
-      return 1;
-    } else {
-      return report(L, 1);
-    }
+    if (msg && !strncmp(msg, "module ", 7))
+      goto nomodule;
+    return report(L, 1);
   }
   lua_getfield(L, -1, "start");
-  if (lua_isnil(L, -1)) goto err;
+  if (lua_isnil(L, -1)) {
+  nomodule:
+    l_message(progname,
+	      "unknown luaJIT command or jit.* modules not installed");
+    return 1;
+  }
   lua_remove(L, -2);  /* Drop module table. */
   return 0;
 }
