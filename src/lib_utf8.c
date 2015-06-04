@@ -1,9 +1,9 @@
 /*
 ** utf8 library.
-** Copyright (C) 2013-2014 Francois Perrad.
+** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the Lua interpreter.
-** Copyright (C) 1994-2014 Lua.org, PUC-Rio. See Copyright Notice in lua.h
+** Copyright (C) 1994-2015 Lua.org, PUC-Rio. See Copyright Notice in lua.h
 */
 
 
@@ -38,7 +38,7 @@ static lua_Integer u_posrelat (lua_Integer pos, size_t len) {
 ** Decode one UTF-8 sequence, returning NULL if byte sequence is invalid.
 */
 static const char *utf8_decode (const char *o, int *val) {
-  static unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
+  static const unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
   const unsigned char *s = (const unsigned char *)o;
   unsigned int c = s[0];
   unsigned int res = 0;  /* final result */
@@ -109,9 +109,9 @@ LJLIB_CF(utf8_codepoint)
   luaL_argcheck(L, posi >= 1, 2, "out of range");
   luaL_argcheck(L, pose <= (lua_Integer)len, 3, "out of range");
   if (posi > pose) return 0;  /* empty interval; return no values */
-  n = (int)(pose -  posi + 1);
-  if (posi + n <= pose)  /* (lua_Integer -> int) overflow? */
+  if (pose - posi >= INT_MAX)  /* (lua_Integer -> int) overflow? */
     return luaL_error(L, "string slice too long");
+  n = (int)(pose -  posi) + 1;
   luaL_checkstack(L, n, "string slice too long");
   n = 0;
   se = s + pose;
@@ -215,7 +215,7 @@ LJLIB_CF(utf8_codes)
 
 int luaopen_utf8 (lua_State *L) {
   LJ_LIB_REG(L, LUA_UTF8LIBNAME, utf8);
-  lua_pushliteral(L, UTF8PATT);
+  lua_pushlstring(L, UTF8PATT, sizeof(UTF8PATT)/sizeof(char) - 1);
   lua_setfield(L, -2, "charpattern"); /* utf8.charpattern = UTF8PATT */
   lua_getglobal(L, "tvm");
   lua_getfield(L, -1, "wchar");
