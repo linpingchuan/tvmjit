@@ -8,5 +8,5 @@ script:
 
 branches:
   only:
-    - lj2
+    - lj21
 
