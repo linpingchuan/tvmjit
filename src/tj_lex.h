@@ -1,6 +1,6 @@
 /*
 ** Lexical analyzer.
-** Copyright (C) 2013-2014 Francois Perrad.
+** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major parts taken verbatim from the LuaJIT.
 ** Copyright (C) 2005-2015 Mike Pall.
@@ -27,7 +27,8 @@ TKDEF(TKENUM)
 #undef TKENUM
 };
 
-typedef int LexToken;
+typedef int LexChar;	/* Lexical character. Unsigned ext. from char. */
+typedef int LexToken;	/* Lexical token. */
 
 /* Combined bytecode ins/line. Only used during bytecode generation. */
 typedef struct BCInsLine {
@@ -49,11 +50,11 @@ typedef struct VarInfo {
 typedef struct LexState {
   struct FuncState *fs;	/* Current FuncState. Defined in tj_parse.c. */
   struct lua_State *L;	/* Lua state. */
-  TValue tokenval;	/* Current token value. */
-  int current;		/* Current character (charint). */
-  LexToken token;	/* Current token. */
-  MSize n;		/* Bytes left in input buffer. */
+  TValue tokval;	/* Current token value. */
   const char *p;	/* Current position in input buffer. */
+  const char *pe;	/* End of input buffer. */
+  LexChar c;		/* Current character. */
+  LexToken tok;		/* Current token. */
   SBuf sb;		/* String buffer for tokens. */
   lua_Reader rfunc;	/* Reader callback. */
   void *rdata;		/* Reader callback data. */
@@ -73,7 +74,7 @@ typedef struct LexState {
 LJ_FUNC int lj_lex_setup(lua_State *L, LexState *ls);
 LJ_FUNC void lj_lex_cleanup(lua_State *L, LexState *ls);
 LJ_FUNC void lj_lex_next(LexState *ls);
-LJ_FUNC const char *lj_lex_token2str(LexState *ls, LexToken token);
-LJ_FUNC_NORET void lj_lex_error(LexState *ls, LexToken token, ErrMsg em, ...);
+LJ_FUNC const char *lj_lex_token2str(LexState *ls, LexToken tok);
+LJ_FUNC_NORET void lj_lex_error(LexState *ls, LexToken tok, ErrMsg em, ...);
 
 #endif

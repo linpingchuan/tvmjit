@@ -10,16 +10,16 @@
 # For MSVC, please follow the instructions given in src/msvcbuild.bat.
 # For MinGW and Cygwin, cd to src and run make with the Makefile there.
 #
-# Copyright (C) 2013-2014 Francois Perrad.
+# Copyright (C) 2013-2015 Francois Perrad.
 #
 # Major portions taken verbatim or adapted from the LuaJIT.
-# Copyright (C) 2005-2013 Mike Pall.
+# Copyright (C) 2005-2015 Mike Pall.
 ##############################################################################
 
 MAJVER=  0
-MINVER=  1
-RELVER=  4
-VERSION= $(MAJVER).$(MINVER).$(RELVER)
+MINVER=  2
+RELVER=  0
+VERSION= $(MAJVER).$(MINVER).$(RELVER)-beta1
 ABIVER=  5.1
 
 ##############################################################################
@@ -87,8 +87,9 @@ FILE_SO= libtvmjit.so
 FILE_MAN= tvmjit.1
 FILE_PC= tvmjit.pc
 FILES_INC= lua.h lualib.h lauxlib.h luaconf.h lua.hpp luajit.h tvmjit.h tvmconf.h
-FILES_JITLIB= bc.lua v.lua dump.lua dis_x86.lua dis_x64.lua dis_arm.lua \
-	      dis_ppc.lua dis_mips.lua dis_mipsel.lua bcsave.lua vmdef.lua
+FILES_JITLIB= bc.lua bcsave.lua dump.lua p.lua v.lua zone.lua \
+	      dis_x86.lua dis_x64.lua dis_arm.lua dis_ppc.lua \
+	      dis_mips.lua dis_mipsel.lua vmdef.lua
 FILES_LUALIB= lunokhod.lua
 
 ifeq (,$(findstring Windows,$(OS)))

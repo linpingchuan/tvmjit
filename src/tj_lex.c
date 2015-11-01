@@ -1,6 +1,6 @@
 /*
 ** Lexical analyzer.
-** Copyright (C) 2013-2014 Francois Perrad.
+** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
 ** Copyright (C) 2005-2015 Mike Pall.
@@ -14,6 +14,7 @@
 #include "lj_obj.h"
 #include "lj_gc.h"
 #include "lj_err.h"
+#include "lj_buf.h"
 #include "lj_str.h"
 #if LJ_HASFFI
 #include "lj_tab.h"
@@ -26,6 +27,7 @@
 #include "tj_parse.h"
 #include "lj_char.h"
 #include "lj_strscan.h"
+#include "lj_strfmt.h"
 
 /* tVM lexer token names. */
 static const char *const tokennames[] = {
@@ -37,50 +39,48 @@ TKDEF(TKSTR)
 
 /* -- Buffer handling ----------------------------------------------------- */
 
-#define char2int(c)		((int)(uint8_t)(c))
-#define next(ls) \
-  (ls->current = (ls->n--) > 0 ? char2int(*ls->p++) : fillbuf(ls))
-#define save_and_next(ls)	(save(ls, ls->current), next(ls))
-#define currIsNewline(ls)	(ls->current == '\n' || ls->current == '\r')
-#define END_OF_STREAM		(-1)
+#define LEX_EOF			(-1)
+#define lex_iseol(ls)		(ls->c == '\n' || ls->c == '\r')
 
-static int fillbuf(LexState *ls)
-{
+/* Get more input from reader. */
+static LJ_NOINLINE LexChar lex_more(LexState *ls)
+ {
   size_t sz;
-  const char *buf = ls->rfunc(ls->L, ls->rdata, &sz);
-  if (buf == NULL || sz == 0) return END_OF_STREAM;
-  ls->n = (MSize)sz - 1;
-  ls->p = buf;
-  return char2int(*(ls->p++));
+  const char *p = ls->rfunc(ls->L, ls->rdata, &sz);
+  if (p == NULL || sz == 0) return LEX_EOF;
+  ls->pe = p + sz;
+  ls->p = p + 1;
+  return (LexChar)(uint8_t)p[0];
 }
 
-static LJ_NOINLINE void save_grow(LexState *ls, int c)
+/* Get next character. */
+static LJ_AINLINE LexChar lex_next(LexState *ls)
 {
-  MSize newsize;
-  if (ls->sb.sz >= LJ_MAX_STR/2)
-    lj_lex_error(ls, 0, LJ_ERR_XELEM);
-  newsize = ls->sb.sz * 2;
-  lj_str_resizebuf(ls->L, &ls->sb, newsize);
-  ls->sb.buf[ls->sb.n++] = (char)c;
+  return (ls->c = ls->p < ls->pe ? (LexChar)(uint8_t)*ls->p++ : lex_more(ls));
 }
 
-static LJ_AINLINE void save(LexState *ls, int c)
+/* Save character. */
+static LJ_AINLINE void lex_save(LexState *ls, LexChar c)
 {
-  if (LJ_UNLIKELY(ls->sb.n + 1 > ls->sb.sz))
-    save_grow(ls, c);
-  else
-    ls->sb.buf[ls->sb.n++] = (char)c;
+  lj_buf_putb(&ls->sb, c);
 }
 
-static void inclinenumber(LexState *ls)
+/* Save previous character and get next character. */
+static LJ_AINLINE LexChar lex_savenext(LexState *ls)
 {
-  int old = ls->current;
-  lua_assert(currIsNewline(ls));
-  next(ls);  /* skip `\n' or `\r' */
-  if (currIsNewline(ls) && ls->current != old)
-    next(ls);  /* skip `\n\r' or `\r\n' */
+  lex_save(ls, ls->c);
+  return lex_next(ls);
+}
+
+/* Skip line break. Handles "\n", "\r", "\r\n" or "\n\r". */
+static void lex_newline(LexState *ls)
+{
+  LexChar old = ls->c;
+  lua_assert(lex_iseol(ls));
+  lex_next(ls);  /* Skip "\n" or "\r". */
+  if (lex_iseol(ls) && ls->c != old) lex_next(ls);  /* Skip "\n\r" or "\r\n". */
   if (++ls->linenumber >= LJ_MAX_LINE)
-    lj_lex_error(ls, ls->token, LJ_ERR_XLINES);
+    lj_lex_error(ls, ls->tok, LJ_ERR_XLINES);
 }
 
 /* -- Scanner for terminals ----------------------------------------------- */
@@ -89,25 +89,22 @@ static void inclinenumber(LexState *ls)
 static void lex_number(LexState *ls)
 {
   StrScanFmt fmt;
-  TValue *tv = &ls->tokenval;
-  int c, xp = 'e';
-  if (ls->current == '-' || ls->current == '+') {
-    save_and_next(ls);
+  TValue *tv = &ls->tokval;
+  LexChar c, xp = 'e';
+  if (ls->c == '+' || ls->c == '-')
+    lex_savenext(ls);
+  if ((c = ls->c) == '0' && (lex_savenext(ls) | 0x20) == 'x')
+    xp = 'p';
+  while (lj_char_isident(ls->c) || ls->c == '.' ||
+	 ((ls->c == '-' || ls->c == '+') && (c | 0x20) == xp)) {
+    c = ls->c;
+    lex_savenext(ls);
   }
-  if ((c = ls->current) == '0') {
-    save_and_next(ls);
-    if ((ls->current | 0x20) == 'x') xp = 'p';
-  }
-  while (lj_char_isident(ls->current) || ls->current == '.' ||
-	 ((ls->current == '-' || ls->current == '+') && (c | 0x20) == xp)) {
-    c = ls->current;
-    save_and_next(ls);
-  }
-  save(ls, '\0');
-  fmt = lj_strscan_scan((const uint8_t *)ls->sb.buf, tv,
+  lex_save(ls, '\0');
+  fmt = lj_strscan_scan((const uint8_t *)sbufB(&ls->sb), tv,
 	  (LJ_DUALNUM ? STRSCAN_OPT_TOINT : STRSCAN_OPT_TONUM) |
 	  (LJ_HASFFI ? (STRSCAN_OPT_LL|STRSCAN_OPT_IMAG) : 0));
-  ls->token = TK_number;
+  ls->tok = TK_number;
   if (LJ_DUALNUM && fmt == STRSCAN_INT) {
     setitype(tv, LJ_TISNUM);
   } else if (fmt == STRSCAN_NUM) {
@@ -138,16 +135,17 @@ static void lex_number(LexState *ls)
   }
 }
 
-static void read_string(LexState *ls)
+/* Parse a string. */
+static void lex_string(LexState *ls)
 {
-  save_and_next(ls);
-  while (ls->current != '"') {
-    switch (ls->current) {
-    case END_OF_STREAM:
+  lex_savenext(ls);
+  while (ls->c != '"') {
+    switch (ls->c) {
+    case LEX_EOF:
       lj_lex_error(ls, TK_eof, LJ_ERR_XSTR);
       continue;
     case '\\': {
-      int c = next(ls);  /* Skip the '\\'. */
+      LexChar c = lex_next(ls);  /* Skip the '\\'. */
       switch (c) {
       case 'a': c = '\a'; break;
       case 'b': c = '\b'; break;
@@ -157,150 +155,150 @@ static void read_string(LexState *ls)
       case 't': c = '\t'; break;
       case 'v': c = '\v'; break;
       case 'x':  /* Hexadecimal escape '\xXX'. */
-	c = (next(ls) & 15u) << 4;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c = (lex_next(ls) & 15u) << 4;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 4;
 	}
-	c += (next(ls) & 15u);
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u);
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9;
 	}
 	break;
       case 'u':  /* Unicode escape '\uXXXX'. */
-	c = (next(ls) & 15u) << 12;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c = (lex_next(ls) & 15u) << 12;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 12;
 	}
-	c += (next(ls) & 15u) << 8;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 8;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 8;
 	}
-	c += (next(ls) & 15u) << 4;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 4;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 4;
 	}
-	c += (next(ls) & 15u);
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u);
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9;
 	}
 	if (c >= 0x0800) {
-	  save(ls, 0xE0 | (c >> 12));
-	  save(ls, 0x80 | ((c >> 6) & 0x3f));
+	  lex_save(ls, 0xE0 | (c >> 12));
+	  lex_save(ls, 0x80 | ((c >> 6) & 0x3f));
 	  c = 0x80 | (c & 0x3f);
 	}
 	else if (c >= 0x0080) {
-	  save(ls, 0xC0 | (c >> 6));
+	  lex_save(ls, 0xC0 | (c >> 6));
 	  c = 0x80 | (c & 0x3f);
 	}
 	break;
       case 'U':  /* Unicode escape '\UXXXXXXXX'. */
-	c = (next(ls) & 15u) << 28;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c = (lex_next(ls) & 15u) << 28;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 28;
 	}
-	c += (next(ls) & 15u) << 24;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 24;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 24;
 	}
-	c += (next(ls) & 15u) << 20;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 20;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 20;
 	}
-	c += (next(ls) & 15u) << 16;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 16;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 16;
 	}
-	c += (next(ls) & 15u) << 12;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 12;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 12;
 	}
-	c += (next(ls) & 15u) << 8;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 8;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 8;
 	}
-	c += (next(ls) & 15u) << 4;
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u) << 4;
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9 << 4;
 	}
-	c += (next(ls) & 15u);
-	if (!lj_char_isdigit(ls->current)) {
-	  if (!lj_char_isxdigit(ls->current)) goto err_xesc;
+	c += (lex_next(ls) & 15u);
+	if (!lj_char_isdigit(ls->c)) {
+	  if (!lj_char_isxdigit(ls->c)) goto err_xesc;
 	  c += 9;
 	}
 	if (c >= 0x4000000) {
-	  save(ls, 0xFC | (c >> 30));
-	  save(ls, 0x80 | ((c >> 24) & 0x3f));
-	  save(ls, 0x80 | ((c >> 18) & 0x3f));
-	  save(ls, 0x80 | ((c >> 12) & 0x3f));
-	  save(ls, 0x80 | ((c >> 6) & 0x3f));
+	  lex_save(ls, 0xFC | (c >> 30));
+	  lex_save(ls, 0x80 | ((c >> 24) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 18) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 12) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 6) & 0x3f));
 	  c = 0x80 | (c & 0x3f);
 	}
 	else if (c >= 0x200000) {
-	  save(ls, 0xF8 | (c >> 24));
-	  save(ls, 0x80 | ((c >> 18) & 0x3f));
-	  save(ls, 0x80 | ((c >> 12) & 0x3f));
-	  save(ls, 0x80 | ((c >> 6) & 0x3f));
+	  lex_save(ls, 0xF8 | (c >> 24));
+	  lex_save(ls, 0x80 | ((c >> 18) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 12) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 6) & 0x3f));
 	  c = 0x80 | (c & 0x3f);
 	}
 	else if (c >= 0x10000) {
-	  save(ls, 0xF0 | (c >> 18));
-	  save(ls, 0x80 | ((c >> 12) & 0x3f));
-	  save(ls, 0x80 | ((c >> 6) & 0x3f));
+	  lex_save(ls, 0xF0 | (c >> 18));
+	  lex_save(ls, 0x80 | ((c >> 12) & 0x3f));
+	  lex_save(ls, 0x80 | ((c >> 6) & 0x3f));
 	  c = 0x80 | (c & 0x3f);
 	}
 	else if (c >= 0x0800) {
-	  save(ls, 0xE0 | (c >> 12));
-	  save(ls, 0x80 | ((c >> 6) & 0x3f));
+	  lex_save(ls, 0xE0 | (c >> 12));
+	  lex_save(ls, 0x80 | ((c >> 6) & 0x3f));
 	  c = 0x80 | (c & 0x3f);
 	}
 	else if (c >= 0x0080) {
-	  save(ls, 0xC0 | (c >> 6));
+	  lex_save(ls, 0xC0 | (c >> 6));
 	  c = 0x80 | (c & 0x3f);
 	}
 	break;
       case '\\': case '\"': case '\'': break;
-      case END_OF_STREAM: continue;
+      case LEX_EOF: continue;
       default:
       err_xesc:
 	lj_lex_error(ls, TK_string, LJ_ERR_XESC);
       }
-      save(ls, c);
-      next(ls);
+      lex_save(ls, c);
+      lex_next(ls);
       continue;
       }
     case '\n':
     case '\r':
-      inclinenumber(ls);
-      save(ls, '\n');
+      lex_newline(ls);
+      lex_save(ls, '\n');
       break;
     default:
-      save_and_next(ls);
+      lex_savenext(ls);
       break;
     }
   }
-  save_and_next(ls);  /* skip delimiter */
-  setstrV(ls->L, &ls->tokenval, lj_parse_keepstr(ls, ls->sb.buf + 1, ls->sb.n - 2));
-  ls->token = TK_string;
+  lex_savenext(ls);  /* Skip trailing delimiter. */
+  setstrV(ls->L, &ls->tokval,
+	  lj_parse_keepstr(ls, sbufB(&ls->sb)+1, sbuflen(&ls->sb)-2));
+  ls->tok = TK_string;
 }
 
 static void lex_name(LexState *ls)
 {
-  GCstr *s;
   for (;;) {
-    switch (ls->current) {
+    switch (ls->c) {
       case '\n':
       case '\r':  /* line breaks */
       case ' ':
@@ -312,15 +310,15 @@ static void lex_name(LexState *ls)
       case ':':
         goto end;
       case '\\':
-        next(ls);
+        lex_next(ls);
       default:
-        save_and_next(ls);
+        lex_savenext(ls);
     }
   }
 end:
-  s = lj_parse_keepstr(ls, ls->sb.buf, ls->sb.n);
-  setstrV(ls->L, &ls->tokenval, s);
-  ls->token = TK_name;
+  setstrV(ls->L, &ls->tokval,
+	  lj_parse_keepstr(ls, sbufB(&ls->sb), sbuflen(&ls->sb)));
+  ls->tok = TK_name;
 }
 
 /* -- Main lexical scanner ------------------------------------------------ */
@@ -328,33 +326,33 @@ end:
 void lj_lex_next(LexState *ls)
 {
   ls->lastline = ls->linenumber;
-  lj_str_resetbuf(&ls->sb);
+  lj_buf_reset(&ls->sb);
   for (;;) {
-    switch (ls->current) {
+    switch (ls->c) {
     case '\n':
     case '\r':
-      inclinenumber(ls);
+      lex_newline(ls);
       continue;
     case ' ':
     case '\t':
     case '\v':
     case '\f':
-      next(ls);
+      lex_next(ls);
       continue;
     case ';':
-      next(ls);
-      while (!currIsNewline(ls) && ls->current != END_OF_STREAM)
-	next(ls);
+      lex_next(ls);
+      while (!lex_iseol(ls) && ls->c != LEX_EOF)
+	lex_next(ls);
       continue;
     case '(':
     case ')':
     case ':': {
-      ls->token = ls->current;
-      next(ls);
+      ls->tok = ls->c;
+      lex_next(ls);
       return;
     }
     case '"':
-      read_string(ls);
+      lex_string(ls);
       return;
     case '-':
     case '+':
@@ -370,8 +368,8 @@ void lj_lex_next(LexState *ls)
     case '9':
       lex_number(ls);
       return;
-    case END_OF_STREAM:
-      ls->token = TK_eof;
+    case LEX_EOF:
+      ls->tok = TK_eof;
       return;
     default: {
       lex_name(ls);
@@ -389,34 +387,31 @@ int lj_lex_setup(lua_State *L, LexState *ls)
   int header = 0;
   ls->L = L;
   ls->fs = NULL;
-  ls->n = 0;
-  ls->p = NULL;
+  ls->pe = ls->p = NULL;
   ls->vstack = NULL;
   ls->sizevstack = 0;
   ls->vtop = 0;
   ls->bcstack = NULL;
   ls->sizebcstack = 0;
-  ls->token = 0;
+  ls->tok = 0;
   ls->linenumber = 1;
   ls->lastline = 1;
-  lj_str_resizebuf(ls->L, &ls->sb, LJ_MIN_SBUF);
-  next(ls);  /* Read-ahead first char. */
-  if (ls->current == 0xef && ls->n >= 2 && char2int(ls->p[0]) == 0xbb &&
-      char2int(ls->p[1]) == 0xbf) {  /* Skip UTF-8 BOM (if buffered). */
-    ls->n -= 2;
+  lex_next(ls);  /* Read-ahead first char. */
+  if (ls->c == 0xef && ls->p + 2 <= ls->pe && (uint8_t)ls->p[0] == 0xbb &&
+      (uint8_t)ls->p[1] == 0xbf) {  /* Skip UTF-8 BOM (if buffered). */
     ls->p += 2;
-    next(ls);
+    lex_next(ls);
     header = 1;
   }
-  if (ls->current == '#') {  /* Skip POSIX #! header line. */
+  if (ls->c == '#') {  /* Skip POSIX #! header line. */
     do {
-      next(ls);
-      if (ls->current == END_OF_STREAM) return 0;
-    } while (!currIsNewline(ls));
-    inclinenumber(ls);
+      lex_next(ls);
+      if (ls->c == LEX_EOF) return 0;
+    } while (!lex_iseol(ls));
+    lex_newline(ls);
     header = 1;
   }
-  if (ls->current == LUA_SIGNATURE[0]) {  /* Bytecode dump. */
+  if (ls->c == LUA_SIGNATURE[0]) {  /* Bytecode dump. */
     if (header) {
       /*
       ** Loading bytecode with an extra header is disabled for security
@@ -438,33 +433,35 @@ void lj_lex_cleanup(lua_State *L, LexState *ls)
   global_State *g = G(L);
   lj_mem_freevec(g, ls->bcstack, ls->sizebcstack, BCInsLine);
   lj_mem_freevec(g, ls->vstack, ls->sizevstack, VarInfo);
-  lj_str_freebuf(g, &ls->sb);
+  lj_buf_free(g, &ls->sb);
 }
 
-const char *lj_lex_token2str(LexState *ls, LexToken token)
+/* Convert token to string. */
+const char *lj_lex_token2str(LexState *ls, LexToken tok)
 {
-  if (token > TK_OFS)
-    return tokennames[token-TK_OFS-1];
-  else if (!lj_char_iscntrl(token))
-    return lj_str_pushf(ls->L, "%c", token);
+  if (tok > TK_OFS)
+    return tokennames[tok-TK_OFS-1];
+  else if (!lj_char_iscntrl(tok))
+    return lj_strfmt_pushf(ls->L, "%c", tok);
   else
-    return lj_str_pushf(ls->L, "char(%d)", token);
+    return lj_strfmt_pushf(ls->L, "char(%d)", tok);
 }
 
-void lj_lex_error(LexState *ls, LexToken token, ErrMsg em, ...)
+/* Lexer error. */
+void lj_lex_error(LexState *ls, LexToken tok, ErrMsg em, ...)
 {
-  const char *tok;
+  const char *tokstr;
   va_list argp;
-  if (token == 0) {
-    tok = NULL;
-  } else if (token == TK_name || token == TK_string || token == TK_number) {
-    save(ls, '\0');
-    tok = ls->sb.buf;
+  if (tok == 0) {
+    tokstr = NULL;
+  } else if (tok == TK_name || tok == TK_string || tok == TK_number) {
+    lex_save(ls, '\0');
+    tokstr = sbufB(&ls->sb);
   } else {
-    tok = lj_lex_token2str(ls, token);
+    tokstr = lj_lex_token2str(ls, tok);
   }
   va_start(argp, em);
-  lj_err_lex(ls->L, ls->chunkname, tok, ls->linenumber, em, argp);
+  lj_err_lex(ls->L, ls->chunkname, tokstr, ls->linenumber, em, argp);
   va_end(argp);
 }
 

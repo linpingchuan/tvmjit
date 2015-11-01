@@ -1,6 +1,6 @@
 /*
 ** TvmJIT frontend. Runs commands, scripts, read-eval-print (REPL) etc.
-** Copyright (C) 2013-2014 Francois Perrad.
+** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major parts taken verbatim from the LuaJIT.
 ** Copyright (C) 2005-2015 Mike Pall.
@@ -67,8 +67,9 @@ static void laction(int i)
 
 static void print_usage(void)
 {
-  fprintf(stderr,
-  "usage: %s [options]... [script [args]...].\n"
+  fputs("usage: ", stderr);
+  fputs(progname, stderr);
+  fputs(" [options]... [script [args]...].\n"
   "Available options are:\n"
   "  -e chunk  Execute string " LUA_QL("chunk") ".\n"
   "  -l name   Require library " LUA_QL("name") ".\n"
@@ -79,16 +80,14 @@ static void print_usage(void)
   "  -v        Show version information.\n"
   "  -E        Ignore environment variables.\n"
   "  --        Stop handling options.\n"
-  "  -         Execute stdin and stop handling options.\n"
-  ,
-  progname);
+  "  -         Execute stdin and stop handling options.\n", stderr);
   fflush(stderr);
 }
 
 static void l_message(const char *pname, const char *msg)
 {
-  if (pname) fprintf(stderr, "%s: ", pname);
-  fprintf(stderr, "%s\n", msg);
+  if (pname) { fputs(pname, stderr); fputc(':', stderr); fputc(' ', stderr); }
+  fputs(msg, stderr); fputc('\n', stderr);
   fflush(stderr);
 }
 

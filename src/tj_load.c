@@ -1,6 +1,6 @@
 /*
 ** Load and dump code.
-** Copyright (C) 2013-2014 Francois Perrad.
+** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
 ** Copyright (C) 2005-2015 Mike Pall.
@@ -18,7 +18,7 @@
 #include "lj_obj.h"
 #include "lj_gc.h"
 #include "lj_err.h"
-#include "lj_str.h"
+#include "lj_buf.h"
 #include "lj_func.h"
 #include "lj_frame.h"
 #include "lj_vm.h"
@@ -57,7 +57,7 @@ LUA_API int tvm_loadx(lua_State *L, lua_Reader reader, void *data,
   ls.rdata = data;
   ls.chunkarg = chunkname ? chunkname : "?";
   ls.mode = mode;
-  lj_str_initbuf(&ls.sb);
+  lj_buf_init(L, &ls.sb);
   status = lj_vm_cpcall(L, NULL, &ls, cpparser);
   lj_lex_cleanup(L, &ls);
   lj_gc_check(L);

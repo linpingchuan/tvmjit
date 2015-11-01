@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2015 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -32,7 +32,7 @@
 (!let error_contains error_contains)
 (!let type_ok type_ok)
 
-(!call plan 114)
+(!call plan 113)
 
 (!call is (!call byte "ABC") 65 "function byte")
 (!call is (!call byte "ABC" 2) 66)
@@ -123,17 +123,13 @@
                       ": invalid option '%k' to 'format'"
                       "function format (invalid option)")
 
-(!call error_contains (!lambda () (!call format "%------s" "toto"))
-                      ": invalid format (repeated flags)"
-                      "function format (invalid format)")
-
 (!call error_contains (!lambda () (!call format "pi = %.123f" (!index math "pi")))
-                      ": invalid format (width or precision too long)"
-                      "function format (invalid format)")
+                      ": invalid option '%.123' to 'format'"
+                      "function format (invalid option)")
 
 (!call error_contains (!lambda () (!call format "% 123s" "toto"))
-                      ": invalid format (width or precision too long)"
-                      "function format (invalid format)")
+                      ": invalid option '% 123' to 'format'"
+                      "function format (invalid option)")
 
 (!let s "hello")
 (!let output ())

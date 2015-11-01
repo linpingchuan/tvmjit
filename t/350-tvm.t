@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2015 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -32,7 +32,7 @@
 
 (!call plan 74)
 
-(!call contains (!index tvm "_VERSION") "TvmJIT 0.1.3" "variable _VERSION")
+(!call contains (!index tvm "_VERSION") "TvmJIT 0.2.0" "variable _VERSION")
 
 (!call is (!call escape "a(b:c)d e") "a\\(b\\:c\\)d\\ e")
 
