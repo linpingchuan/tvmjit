@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2016 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -13,7 +13,7 @@
 (!let error_contains error_contains)
 (!let is is)
 
-(!call plan 28)
+(!call plan 29)
 
 (!call error_contains (!lambda () (!return (!neg ())))
                       ": attempt to perform arithmetic on"
@@ -105,3 +105,6 @@
                       ": table index is nil"
                       "table index is nil")
 
+(!call error_contains (!lambda () (!define t ())(!assign (!index t (!div 0 0)) 42))
+                      ": table index is NaN"
+                      "table index is NaN")
