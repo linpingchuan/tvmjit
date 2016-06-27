@@ -61,6 +61,12 @@ function L:_resetbuffer ()
     self.buff = {}
 end
 
+function L:_buffremove (n)
+    for _ = 1, n do
+        self.buff[#self.buff] = nil
+    end
+end
+
 function L:_next ()
     self.pos = self.pos + 1
     local c = sub(self.z, self.pos, self.pos)
@@ -143,12 +149,18 @@ end
     =======================================================
 --]]
 
-function L:_check_next (set)
-    if not find(set, self.current) then
-        return false
+function L:_check_next1 (c)
+    if self.current == c then
+        self:_next()
+        return true
     end
-    self:_save_and_next()
-    return true
+end
+
+function L:_check_next2 (set)
+    if find(set, self.current) then
+        self:_save_and_next()
+        return true
+    end
 end
 
 function L:_read_numeral (tok)
@@ -156,12 +168,12 @@ function L:_read_numeral (tok)
     local first = self.current
     assert(find(digit, self.current))
     self:_save_and_next()
-    if first == '0' and self:_check_next('Xx') then
+    if first == '0' and self:_check_next2('Xx') then
         expo = 'Pp'
     end
     while true do
-        if self:_check_next(expo) then
-            self:_check_next('+-')
+        if self:_check_next2(expo) then
+            self:_check_next2('+-')
         elseif find(xdigit, self.current) or self.current == '.' then
             self:_save_and_next()
         else
@@ -172,6 +184,7 @@ function L:_read_numeral (tok)
     if not tonumber(tok.seminfo) then
         self:_lexerror("malformed number", '<number>')
     end
+    return '<number>'
 end
 
 function L:_skip_sep ()
@@ -187,13 +200,16 @@ function L:_skip_sep ()
 end
 
 function L:_read_long_string (tok, sep)
+    local line = self.linenumber
     self:_save_and_next()
     if find(newline, self.current) then
         self:_inclinenumber()
     end
     while true do
         if     self.current == '<eof>' then
-            self:_lexerror(tok and "unfinished long string" or "unfinished long comment", '<eof>')
+            local what = tok and "string" or "comment"
+            local msg = format("unfinished long %s (starting at line %d)", what, line)
+            self:_lexerror(msg, '<eof>')
         elseif self.current == ']' then
             if self:_skip_sep() == sep then
                 self:_save_and_next()
@@ -215,41 +231,43 @@ function L:_read_long_string (tok, sep)
     end
     if tok then
         tok.seminfo = sub(tconcat(self.buff), 3+sep, -3-sep)
+        return '<string>'
     end
 end
 
-function L:_escerror (c, msg)
-    self:_resetbuffer()
-    self:_save(c)
-    self:_lexerror(msg, '<string>')
+function L:_esccheck (cond, msg)
+    if not cond then
+        if self.current ~= '<eof>' then
+            self:_save_and_next()
+        end
+        self:_lexerror(msg, '<string>')
+    end
+end
+
+function L:_gethexa ()
+    self:_save_and_next()
+    local c = self.current
+    self:_esccheck(find(xdigit, c), "hexadecimal digit expected")
+    return tonumber(c, 16)
 end
 
 function L:_readhexaesc ()
-    local r = ''
-    for i = 1, 2 do
-        local c = self:_next()
-        r = r .. c
-        if not find(xdigit, c) then
-            self:_escerror('x' .. r, "hexadecimal digit expected")
-        end
-    end
-    return char(tonumber(r, 16))
+    local r = self:_gethexa()
+    r = (16 * r) + self:_gethexa()
+    self:_buffremove(2)
+    return char(r)
 end
 
 function L:_readdecesc ()
-    local r = ''
-    for i = 1, 3 do
-        local c = self.current
-        if not find(digit, c) then
-            break
-        end
-        r = r .. c
-        self:_next()
+    local r = 0
+    local i = 0
+    while i < 3 and find(digit, self.current) do
+        r = (10 * r) + tonumber(self.current)
+        self:_save_and_next()
+        i = i + 1
     end
-    r = tonumber(r)
-    if r > 255 then
-        self:_escerror(err, "decimal escape too large")
-    end
+    self:_esccheck(r <= 255, "decimal escape too large")
+    self:_buffremove(i)
     return char(r)
 end
 
@@ -262,48 +280,51 @@ function L:_read_string (del, tok)
             or self.current == '\r' then
             self:_lexerror("unfinished string", '<string>')
         elseif self.current == '\\' then
-            self:_next()
+            local c
+            self:_save_and_next()
             if     self.current == 'a' then
-                self:_next()
-                self:_save('\a')
+                c = '\a'
+                goto read_save
             elseif self.current == 'b' then
-                self:_next()
-                self:_save('\b')
+                c = 'b'
+                goto read_save
             elseif self.current == 'f' then
-                self:_next()
-                self:_save('\f')
+                c = '\f'
+                goto read_save
             elseif self.current == 'n' then
-                self:_next()
-                self:_save('\n')
+                c = '\n'
+                goto read_save
             elseif self.current == 'r' then
-                self:_next()
-                self:_save('\r')
+                c = '\r'
+                goto read_save
             elseif self.current == 't' then
-                self:_next()
-                self:_save('\t')
+                c = '\t'
+                goto read_save
             elseif self.current == 'v' then
-                self:_next()
-                self:_save('\v')
+                c = '\v'
+                goto read_save
             elseif self.current == 'x' then
-                local c = self:_readhexaesc()
-                self:_next()
-                self:_save(c)
+                c = self:_readhexaesc()
+                goto read_save
             elseif self.current == '\n'
                 or self.current == '\r' then
                 self:_inclinenumber()
-                self:_save('\n')
+                c = '\n'
+                goto only_save
             elseif self.current == '\\' then
-                self:_next()
-                self:_save('\\')
+                c = '\\'
+                goto read_save
             elseif self.current == '"' then
-                self:_next()
-                self:_save('"')
+                c = '"'
+                goto read_save
             elseif self.current == '\'' then
-                self:_next()
-                self:_save('\'')
+                c = '\''
+                goto read_save
             elseif self.current == '<eof>' then
+                goto no_save
                 -- will raise an error next loop
             elseif self.current == 'z' then
+                self:_buffremove(1)
                 self:_next()
                 while find(space, self.current) do
                     if find(newline, self.current) then
@@ -312,18 +333,25 @@ function L:_read_string (del, tok)
                         self:_next()
                     end
                 end
+                goto no_save
             else
-                if not find(digit, self.current) then
-                    self:_escerror(self.current, "invalid escape sequence")
-                end
-                self:_save(self:_readdecesc())
+                self:_esccheck(find(digit, self.current), "invalid escape sequence")
+                c = self:_readdecesc()
+                goto only_save
             end
+::read_save::
+            self:_next()
+::only_save::
+            self:_buffremove(1)
+            self:_save(c)
+::no_save::
         else
             self:_save_and_next()
         end
     end
     self:_save_and_next()
     tok.seminfo = sub(tconcat(self.buff), 2, -2)
+    return '<string>'
 end
 
 function L:_llex (tok)
@@ -358,61 +386,57 @@ function L:_llex (tok)
         elseif self.current == '[' then
             local sep = self:_skip_sep()
             if sep >= 0 then
-                self:_read_long_string(tok, sep)
-                return '<string>'
-            elseif sep == -1 then
-                return '['
-            else
+                return self:_read_long_string(tok, sep)
+            elseif sep ~= -1 then
                 self:_lexerror("invalid long string delimiter", '<string>')
             end
+            return '['
         elseif self.current == '=' then
             self:_next()
-            if self.current ~= '=' then
-                return '='
-            else
-                self:_next()
+            if self:_check_next1('=') then
                 return '=='
+            else
+                return '='
             end
         elseif self.current == '<' then
             self:_next()
-            if self.current ~= '=' then
-                return '<'
-            else
-                self:_next()
+            if self:_check_next1('=') then
                 return '<='
+            elseif self:_check_next1('<') then
+                return '<<'
+            else
+                return '<'
             end
         elseif self.current == '>' then
             self:_next()
-            if self.current ~= '=' then
-                return '>'
-            else
-                self:_next()
+            if self:_check_next1('=') then
                 return '>='
+            elseif self:_check_next1('>') then
+                return '>>'
+            else
+                return '>'
             end
         elseif self.current == '~' then
             self:_next()
-            if self.current ~= '=' then
-                return '~'
-            else
-                self:_next()
+            if self:_check_next1('=') then
                 return '~='
+            else
+                return '~'
             end
         elseif self.current == ':' then
             self:_next()
-            if self.current ~= ':' then
-                return ':'
-            else
-                self:_next()
+            if self:_check_next1(':') then
                 return '::'
+            else
+                return ':'
             end
         elseif self.current == '"'
             or self.current == '\'' then
-            self:_read_string(self.current, tok)
-            return '<string>'
+            return self:_read_string(self.current, tok)
         elseif self.current == '.' then
             self:_save_and_next()
-            if self:_check_next('.') then
-                if self:_check_next('.') then
+            if self:_check_next1('.') then
+                if self:_check_next1('.') then
                     return '...'
                 else
                     return '..'
@@ -421,14 +445,12 @@ function L:_llex (tok)
             if not find(digit, self.current) then
                 return '.'
             else
-                self:_read_numeral(tok)
-                return '<number>'
+                return self:_read_numeral(tok)
             end
+        elseif find(digit, self.current) then
+            return self:_read_numeral(tok)
         elseif self.current == '<eof>' then
             return '<eof>'
-        elseif find(digit, self.current) then
-            self:_read_numeral(tok)
-            return '<number>'
         else
             if find(alpha, self.current) then
                 repeat
@@ -1249,7 +1271,6 @@ local function translate (s, fname)
     if p.current == '\x1B' then
         return s
     end
-    p:BOM()
     p:shebang()
     p.out = { '(!line ', quote(fname), ' ', p.linenumber, ')' }
     p:mainfunc()
