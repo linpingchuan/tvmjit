@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 
 
@@ -1002,7 +1002,7 @@ function P:fornum (name, line)
         self.out[#self.out+1] = ' '
         self:expr(true) -- optional step
     else
-        self.out[#self.out+1] = ' 1 '   -- default step = 1
+        self.out[#self.out+1] = ' 1'    -- default step = 1
     end
     self:forbody(name)
 end

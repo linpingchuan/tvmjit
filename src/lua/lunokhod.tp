@@ -164,7 +164,7 @@
 
 (!line 229)(!assign (!index L "_readhexaesc") (!lambda (self)
 (!line 230)(!define r "")
-(!line 231)(!loop i 1 2 1 
+(!line 231)(!loop i 1 2 1
 (!define i i)
 (!line 232)(!define c (!callmeth self _next ))
 (!line 233)(!assign r (!concat r c))
@@ -175,7 +175,7 @@
 
 (!line 241)(!assign (!index L "_readdecesc") (!lambda (self)
 (!line 242)(!define r "")
-(!line 243)(!loop i 1 3 1 
+(!line 243)(!loop i 1 3 1
 (!define i i)
 (!line 244)(!define c (!index self "current"))
 (!line 245)(!if (!not (!call find digit c))
@@ -779,7 +779,7 @@
 (!do
 (!line 1002)(!assign (!index (!index self "out") (!add (!len (!index self "out")) 1)) " ")
 (!line 1003)(!callmeth self expr !true))(!do
-(!line 1005)(!assign (!index (!index self "out") (!add (!len (!index self "out")) 1)) " 1 ")))
+(!line 1005)(!assign (!index (!index self "out") (!add (!len (!index self "out")) 1)) " 1")))
 (!line 1007)(!callmeth self forbody name)))
 
 (!line 1010)(!assign (!index P "forlist") (!lambda (self name line)
