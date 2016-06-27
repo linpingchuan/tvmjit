@@ -416,6 +416,13 @@ function L:_llex (tok)
             else
                 return '>'
             end
+        elseif self.current == '/' then
+            self:_next()
+            if self:_check_next1('/') then
+                return '//'
+            else
+                return '/'
+            end
         elseif self.current == '~' then
             self:_next()
             if self:_check_next1('=') then
@@ -828,42 +835,55 @@ end
 local unop = {
     ['not']   = '(!not ',
     ['-']     = '(!neg ',
+    ['~']     = '(!call1 (!index tvm "bnot")',
     ['#']     = '(!len ',
 }
 local binop = {
     ['+']     = '(!add ',
     ['-']     = '(!sub ',
     ['*']     = '(!mul ',
-    ['/']     = '(!div ',
     ['%']     = '(!mod ',
     ['^']     = '(!pow ',
+    ['/']     = '(!div ',
+    ['//']    = '(!call1 (!index tvm "idiv")',
+    ['&']     = '(!call1 (!index tvm "band")',
+    ['|']     = '(!call1 (!index tvm "bor")',
+    ['~']     = '(!call1 (!index tvm "bxor")',
+    ['<<']    = '(!call1 (!index tvm "lshift")',
+    ['>>']    = '(!call1 (!index tvm "rshift")',
     ['..']    = '(!concat ',
     ['~=']    = '(!ne ',
     ['==']    = '(!eq ',
-    ['<=']    = '(!le ',
     ['<']     = '(!lt ',
-    ['>=']    = '(!ge ',
+    ['<=']    = '(!le ',
     ['>']     = '(!gt ',
+    ['>=']    = '(!ge ',
     ['and']   = '(!and ',
     ['or']    = '(!or ',
 }
 local priority = {
     --        { left right }
-    ['+']     = { 6, 6 },
-    ['-']     = { 6, 6 },
-    ['*']     = { 7, 7 },
-    ['/']     = { 7, 7 },
-    ['%']     = { 7, 7 },
-    ['^']     = { 10, 9 },      -- right associative
-    ['..']    = { 5, 4 },       -- right associative
-    ['~=']    = { 3, 3 },
-    ['==']    = { 3, 3 },
-    ['<=']    = { 3, 3 },
-    ['<']     = { 3, 3 },
-    ['>=']    = { 3, 3 },
-    ['>']     = { 3, 3 },
-    ['and']   = { 2, 2 },
-    ['or']    = { 1, 1 },
+    ['+']     = { 10, 10 },
+    ['-']     = { 10, 10 },
+    ['*']     = { 11, 11 },
+    ['%']     = { 11, 11 },
+    ['^']     = { 14, 13 },     -- right associative
+    ['/']     = { 11, 11 },
+    ['//']    = { 11, 11 },
+    ['&']     = { 6,  6 },
+    ['|']     = { 4,  4 },
+    ['~']     = { 5,  5 },
+    ['<<']    = { 7,  7 },
+    ['>>']    = { 7,  7 },
+    ['..']    = { 9,  8 },      -- right associative
+    ['==']    = { 3,  3 },
+    ['<']     = { 3,  3 },
+    ['<=']    = { 3,  3 },
+    ['~=']    = { 3,  3 },
+    ['>']     = { 3,  3 },
+    ['>=']    = { 3,  3 },
+    ['and']   = { 2,  2 },
+    ['or']    = { 1,  1 },
 }
 
 function P:expr (one, limit)
@@ -875,7 +895,7 @@ function P:expr (one, limit)
     if uop then
         self:next()
         self.out[#self.out+1] = uop
-        self:expr(false, 8)     -- UNARY_PRIORITY
+        self:expr(false, 12)    -- UNARY_PRIORITY
         self.out[#self.out+1] = ')'
     else
         pos = self:simpleexpr(one)
