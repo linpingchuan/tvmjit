@@ -18,7 +18,7 @@ local tconcat = table.concat
 local tonumber = tonumber
 
 local function find (s, patt)
-    return patt ~= '' and _find(s, patt, 1, true)
+    return _find(s, patt, 1, true)
 end
 
 local digit = '0123456789'
@@ -63,7 +63,8 @@ end
 
 function L:_next ()
     self.pos = self.pos + 1
-    self.current = sub(self.z, self.pos, self.pos)
+    local c = sub(self.z, self.pos, self.pos)
+    self.current = (c ~= '') and c or '<eof>'
     return self.current
 end
 
@@ -81,8 +82,6 @@ function L:_txtToken (token)
         or token == '<string>'
         or token == '<number>' then
         return tconcat(self.buff)
-    elseif token == '' then
-        return '<eof>'
     else
         return token
     end
@@ -193,8 +192,8 @@ function L:_read_long_string (tok, sep)
         self:_inclinenumber()
     end
     while true do
-        if     self.current == '' then
-            self:_lexerror(tok and "unfinished long string" or "unfinished long comment", '')
+        if     self.current == '<eof>' then
+            self:_lexerror(tok and "unfinished long string" or "unfinished long comment", '<eof>')
         elseif self.current == ']' then
             if self:_skip_sep() == sep then
                 self:_save_and_next()
@@ -257,8 +256,8 @@ end
 function L:_read_string (del, tok)
     self:_save_and_next()
     while self.current ~= del do
-        if     self.current == '' then
-            self:_lexerror("unfinished string", '')
+        if     self.current == '<eof>' then
+            self:_lexerror("unfinished string", '<eof>')
         elseif self.current == '\n'
             or self.current == '\r' then
             self:_lexerror("unfinished string", '<string>')
@@ -302,7 +301,7 @@ function L:_read_string (del, tok)
             elseif self.current == '\'' then
                 self:_next()
                 self:_save('\'')
-            elseif self.current == '' then
+            elseif self.current == '<eof>' then
                 -- will raise an error next loop
             elseif self.current == 'z' then
                 self:_next()
@@ -350,13 +349,9 @@ function L:_llex (tok)
                 if sep >= 0 then
                     self:_read_long_string(nil, sep)
                     self:_resetbuffer()
-                else
-                    while not find(newline, self.current) and self.current ~= '' do
-                        self:_next()
-                    end
                 end
             else
-                while not find(newline, self.current) and self.current ~= '' do
+                while not find(newline, self.current) and self.current ~= '<eof>' do
                     self:_next()
                 end
             end
@@ -429,8 +424,8 @@ function L:_llex (tok)
                 self:_read_numeral(tok)
                 return '<number>'
             end
-        elseif self.current == '' then
-            return ''
+        elseif self.current == '<eof>' then
+            return '<eof>'
         elseif find(digit, self.current) then
             self:_read_numeral(tok)
             return '<number>'
@@ -547,7 +542,7 @@ function P:block_follow (withuntil)
     if     self.t.token == 'else'
         or self.t.token == 'elseif'
         or self.t.token == 'end'
-        or self.t.token == '' then
+        or self.t.token == '<eof>' then
         return true
     elseif self.t.token == 'until' then
         return withuntil
@@ -1245,7 +1240,7 @@ end
 function P:mainfunc ()
     self:next()
     self:statlist()
-    self:check('')
+    self:check('<eof>')
 end
 
 local function translate (s, fname)
