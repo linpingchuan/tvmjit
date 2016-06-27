@@ -734,6 +734,15 @@ else
 	$(Q)touch $@
 endif
 
+op53.h: op53.lua
+ifdef REGEN
+	$(E) "GEN       $@"
+	$(Q)$(RUN_TVMJIT) -b $< $@
+else
+	$(E) "TOUCH     $@"
+	$(Q)touch $@
+endif
+
 parse.h: parse.lua
 ifdef REGEN
 	$(E) "GEN       $@"

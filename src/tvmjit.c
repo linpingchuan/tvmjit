@@ -24,6 +24,7 @@
 #include "op.h"
 #include "parse.h"
 #include "lunokhod.h"
+#include "op53.h"
 
 #if LJ_TARGET_POSIX
 #include <unistd.h>
@@ -538,6 +539,9 @@ static int pmain(lua_State *L)
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
   s->status = tvm_loadbufferx(L, luaJIT_BC_lunokhod, luaJIT_BC_lunokhod_SIZE, "lunokhod", "b")
+           || docall(L, 0, 1);
+  if (s->status != 0) return 0;
+  s->status = tvm_loadbufferx(L, luaJIT_BC_op53, luaJIT_BC_op53_SIZE, "op53", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
   lua_gc(L, LUA_GCRESTART, -1);
