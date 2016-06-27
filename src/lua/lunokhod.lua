@@ -7,11 +7,13 @@
 
 local _G = _G
 local assert = assert
+local band = bit.band
 local char = string.char
 local error = error
 local _find = string.find
 local format = string.format
 local quote = tvm.quote
+local rshift = bit.rshift
 local setmetatable= setmetatable
 local sub = string.sub
 local tconcat = table.concat
@@ -258,6 +260,43 @@ function L:_readhexaesc ()
     return char(r)
 end
 
+function L:_readutf8esc ()
+    local i = 4
+    self:_save_and_next()
+    self:_esccheck(self.current == '{', "missing '{'")
+    local r = self:_gethexa()
+    self:_save_and_next()
+    while find(xdigit, self.current) do
+        i = i + 1
+        r = (16 * r) + tonumber(self.current, 16)
+        self:_esccheck(r <= 0x10FFFF, "UTF-8 value too large")
+        self:_save_and_next()
+    end
+    self:_esccheck(self.current == '}', "missing '}'");
+    self:_next()
+    self:_buffremove(i)
+    return r
+end
+
+function L:_utf8esc ()
+    local n = self:_readutf8esc()
+    if n < 0x80 then
+        self:_save(char(n))
+    elseif n < 0x800 then
+        self:_save(char(0xC0 + rshift(n, 6)))
+        self:_save(char(0x80 + band(n, 0x3F)))
+    elseif n < 0x10000 then
+        self:_save(char(0xE0 + rshift(n, 12)))
+        self:_save(char(0x80 + band(rshift(n, 6), 0x3F)))
+        self:_save(char(0x80 + band(n, 0x3F)))
+    else
+        self:_save(char(0xF0 + rshift(n, 18)))
+        self:_save(char(0x80 + band(rshift(n, 12), 0x3F)))
+        self:_save(char(0x80 + band(rshift(n, 6), 0x3F)))
+        self:_save(char(0x80 + band(n, 0x3F)))
+    end
+end
+
 function L:_readdecesc ()
     local r = 0
     local i = 0
@@ -306,6 +345,9 @@ function L:_read_string (del, tok)
             elseif self.current == 'x' then
                 c = self:_readhexaesc()
                 goto read_save
+            elseif self.current == 'u' then
+                self:_utf8esc()
+                goto no_save
             elseif self.current == '\n'
                 or self.current == '\r' then
                 self:_inclinenumber()
