@@ -79,300 +79,300 @@
 (!line 127)(!assign (!index self "linenumber") (!add (!index self "linenumber") 1))))
 
 (!line 130)(!assign (!index L "setinput") (!lambda (self z source)
-(!line 131)(!assign (!index self "_lookahead") ("token": ""))
-(!line 132)(!assign (!index self "t") ("token": ""))
-(!line 133)(!assign (!index self "z") z)
-(!line 134)(!assign (!index self "linenumber") 1)
-(!line 135)(!assign (!index self "lastline") 1)
-(!line 136)(!assign (!index self "source") source)
-(!line 137)(!assign (!index self "buff") ())
-(!line 138)(!assign (!index self "pos") 0)
-(!line 139)(!callmeth self _next )))
+(!line 131)(!assign (!index self "_lookahead") ("token": !false "seminfo": !false))
+(!line 132)(!assign (!index self "z") z)
+(!line 133)(!assign (!index self "linenumber") 1)
+(!line 134)(!assign (!index self "lastline") 1)
+(!line 135)(!assign (!index self "source") source)
+(!line 136)(!assign (!index self "buff") ())
+(!line 137)(!assign (!index self "pos") 0)
+(!line 138)(!assign (!index self "t") ("token": (!callmeth1 self _next ) "seminfo": !false))))
 
-(!line 148)(!assign (!index L "_check_next") (!lambda (self set)
-(!line 149)(!if (!not (!call find set (!index self "current")))
+(!line 147)(!assign (!index L "_check_next") (!lambda (self set)
+(!line 148)(!if (!not (!call find set (!index self "current")))
 (!do
-(!line 150)(!return !false)))
-(!line 152)(!callmeth self _save_and_next )
-(!line 153)(!return !true)))
+(!line 149)(!return !false)))
+(!line 151)(!callmeth self _save_and_next )
+(!line 152)(!return !true)))
 
-(!line 156)(!assign (!index L "_read_numeral") (!lambda (self tok)
-(!line 157)(!define expo "Ee")
-(!line 158)(!define first (!index self "current"))
-(!line 159)(!call assert (!call find digit (!index self "current")))
-(!line 160)(!callmeth self _save_and_next )
-(!line 161)(!if (!and (!eq first "0") (!callmeth self _check_next "Xx"))
+(!line 155)(!assign (!index L "_read_numeral") (!lambda (self tok)
+(!line 156)(!define expo "Ee")
+(!line 157)(!define first (!index self "current"))
+(!line 158)(!call assert (!call find digit (!index self "current")))
+(!line 159)(!callmeth self _save_and_next )
+(!line 160)(!if (!and (!eq first "0") (!callmeth self _check_next "Xx"))
 (!do
-(!line 162)(!assign expo "Pp")))
-(!line 164)(!while !true
+(!line 161)(!assign expo "Pp")))
+(!line 163)(!while !true
 
-(!line 165)(!if (!callmeth1 self _check_next expo)
+(!line 164)(!if (!callmeth1 self _check_next expo)
 (!do
-(!line 166)(!callmeth self _check_next "+-"))(!if (!or (!call1 find xdigit (!index self "current")) (!eq (!index self "current") "."))
+(!line 165)(!callmeth self _check_next "+-"))(!if (!or (!call1 find xdigit (!index self "current")) (!eq (!index self "current") "."))
 (!do
-(!line 168)(!callmeth self _save_and_next ))(!do
-(!line 170)(!break)))))
-(!line 173)(!assign (!index tok "seminfo") (!call tconcat (!index self "buff")))
-(!line 174)(!if (!not (!call tonumber (!index tok "seminfo")))
+(!line 167)(!callmeth self _save_and_next ))(!do
+(!line 169)(!break)))))
+(!line 172)(!assign (!index tok "seminfo") (!call tconcat (!index self "buff")))
+(!line 173)(!if (!not (!call tonumber (!index tok "seminfo")))
 (!do
-(!line 175)(!callmeth self _lexerror "malformed number" "<number>")))))
+(!line 174)(!callmeth self _lexerror "malformed number" "<number>")))))
 
-(!line 179)(!assign (!index L "_skip_sep") (!lambda (self)
-(!line 180)(!define count 0)
-(!line 181)(!define s (!index self "current"))
-(!line 182)(!call assert (!or (!eq s "[") (!eq s "]")))
-(!line 183)(!callmeth self _save_and_next )
-(!line 184)(!while (!eq (!index self "current") "=")
+(!line 178)(!assign (!index L "_skip_sep") (!lambda (self)
+(!line 179)(!define count 0)
+(!line 180)(!define s (!index self "current"))
+(!line 181)(!call assert (!or (!eq s "[") (!eq s "]")))
+(!line 182)(!callmeth self _save_and_next )
+(!line 183)(!while (!eq (!index self "current") "=")
 
-(!line 185)(!callmeth self _save_and_next )
-(!line 186)(!assign count (!add count 1)))
-(!line 188)(!return (!or (!and (!eq (!index self "current") s) count) (!sub (!neg count) 1)))))
+(!line 184)(!callmeth self _save_and_next )
+(!line 185)(!assign count (!add count 1)))
+(!line 187)(!return (!or (!and (!eq (!index self "current") s) count) (!sub (!neg count) 1)))))
 
-(!line 191)(!assign (!index L "_read_long_string") (!lambda (self tok sep)
-(!line 192)(!callmeth self _save_and_next )
-(!line 193)(!if (!call1 find newline (!index self "current"))
+(!line 190)(!assign (!index L "_read_long_string") (!lambda (self tok sep)
+(!line 191)(!callmeth self _save_and_next )
+(!line 192)(!if (!call1 find newline (!index self "current"))
 (!do
-(!line 194)(!callmeth self _inclinenumber )))
-(!line 196)(!while !true
+(!line 193)(!callmeth self _inclinenumber )))
+(!line 195)(!while !true
 
-(!line 197)(!if (!eq (!index self "current") "")
+(!line 196)(!if (!eq (!index self "current") "")
 (!do
-(!line 198)(!callmeth self _lexerror (!or (!and tok "unfinished long string") "unfinished long comment") ""))(!if (!eq (!index self "current") "]")
+(!line 197)(!callmeth self _lexerror (!or (!and tok "unfinished long string") "unfinished long comment") ""))(!if (!eq (!index self "current") "]")
 (!do
-(!line 200)(!if (!eq (!callmeth1 self _skip_sep ) sep)
+(!line 199)(!if (!eq (!callmeth1 self _skip_sep ) sep)
 (!do
-(!line 201)(!callmeth self _save_and_next )
-(!line 202)(!break))))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
+(!line 200)(!callmeth self _save_and_next )
+(!line 201)(!break))))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
 (!do
-(!line 205)(!callmeth self _save "\x0A")
-(!line 206)(!callmeth self _inclinenumber )
-(!line 207)(!if (!not tok)
+(!line 204)(!callmeth self _save "\x0A")
+(!line 205)(!callmeth self _inclinenumber )
+(!line 206)(!if (!not tok)
 (!do
-(!line 208)(!callmeth self _resetbuffer ))))(!do
-(!line 211)(!if tok
+(!line 207)(!callmeth self _resetbuffer ))))(!do
+(!line 210)(!if tok
 (!do
-(!line 212)(!callmeth self _save_and_next ))(!do
-(!line 214)(!callmeth self _next ))))))))
-(!line 218)(!if tok
+(!line 211)(!callmeth self _save_and_next ))(!do
+(!line 213)(!callmeth self _next ))))))))
+(!line 217)(!if tok
 (!do
-(!line 219)(!assign (!index tok "seminfo") (!call sub (!call tconcat (!index self "buff")) (!add 3 sep) (!sub (!neg 3) sep)))))))
+(!line 218)(!assign (!index tok "seminfo") (!call sub (!call tconcat (!index self "buff")) (!add 3 sep) (!sub (!neg 3) sep)))))))
 
-(!line 223)(!assign (!index L "_escerror") (!lambda (self c msg)
-(!line 224)(!callmeth self _resetbuffer )
-(!line 225)(!callmeth self _save c)
-(!line 226)(!callmeth self _lexerror msg "<string>")))
+(!line 222)(!assign (!index L "_escerror") (!lambda (self c msg)
+(!line 223)(!callmeth self _resetbuffer )
+(!line 224)(!callmeth self _save c)
+(!line 225)(!callmeth self _lexerror msg "<string>")))
 
-(!line 229)(!assign (!index L "_readhexaesc") (!lambda (self)
-(!line 230)(!define r "")
-(!line 231)(!loop i 1 2 1
+(!line 228)(!assign (!index L "_readhexaesc") (!lambda (self)
+(!line 229)(!define r "")
+(!line 230)(!loop i 1 2 1
 (!define i i)
-(!line 232)(!define c (!callmeth self _next ))
-(!line 233)(!assign r (!concat r c))
-(!line 234)(!if (!not (!call find xdigit c))
+(!line 231)(!define c (!callmeth self _next ))
+(!line 232)(!assign r (!concat r c))
+(!line 233)(!if (!not (!call find xdigit c))
 (!do
-(!line 235)(!callmeth self _escerror (!concat "x" r) "hexadecimal digit expected"))))
-(!line 238)(!return (!call char (!call tonumber r 16)))))
+(!line 234)(!callmeth self _escerror (!concat "x" r) "hexadecimal digit expected"))))
+(!line 237)(!return (!call char (!call tonumber r 16)))))
 
-(!line 241)(!assign (!index L "_readdecesc") (!lambda (self)
-(!line 242)(!define r "")
-(!line 243)(!loop i 1 3 1
+(!line 240)(!assign (!index L "_readdecesc") (!lambda (self)
+(!line 241)(!define r "")
+(!line 242)(!loop i 1 3 1
 (!define i i)
-(!line 244)(!define c (!index self "current"))
-(!line 245)(!if (!not (!call find digit c))
+(!line 243)(!define c (!index self "current"))
+(!line 244)(!if (!not (!call find digit c))
 (!do
-(!line 246)(!break)))
-(!line 248)(!assign r (!concat r c))
-(!line 249)(!callmeth self _next ))
-(!line 251)(!assign r (!call tonumber r))
-(!line 252)(!if (!gt r 255)
+(!line 245)(!break)))
+(!line 247)(!assign r (!concat r c))
+(!line 248)(!callmeth self _next ))
+(!line 250)(!assign r (!call tonumber r))
+(!line 251)(!if (!gt r 255)
 (!do
-(!line 253)(!callmeth self _escerror err "decimal escape too large")))
-(!line 255)(!return (!call char r))))
+(!line 252)(!callmeth self _escerror err "decimal escape too large")))
+(!line 254)(!return (!call char r))))
 
-(!line 258)(!assign (!index L "_read_string") (!lambda (self del tok)
-(!line 259)(!callmeth self _save_and_next )
-(!line 260)(!while (!ne (!index self "current") del)
+(!line 257)(!assign (!index L "_read_string") (!lambda (self del tok)
+(!line 258)(!callmeth self _save_and_next )
+(!line 259)(!while (!ne (!index self "current") del)
 
-(!line 261)(!if (!eq (!index self "current") "")
+(!line 260)(!if (!eq (!index self "current") "")
 (!do
-(!line 262)(!callmeth self _lexerror "unfinished string" ""))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
+(!line 261)(!callmeth self _lexerror "unfinished string" ""))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
 (!do
-(!line 265)(!callmeth self _lexerror "unfinished string" "<string>"))(!if (!eq (!index self "current") "\\")
+(!line 264)(!callmeth self _lexerror "unfinished string" "<string>"))(!if (!eq (!index self "current") "\\")
 (!do
-(!line 267)(!callmeth self _next )
-(!line 268)(!if (!eq (!index self "current") "a")
+(!line 266)(!callmeth self _next )
+(!line 267)(!if (!eq (!index self "current") "a")
 (!do
-(!line 269)(!callmeth self _next )
-(!line 270)(!callmeth self _save "\x07"))(!if (!eq (!index self "current") "b")
+(!line 268)(!callmeth self _next )
+(!line 269)(!callmeth self _save "\x07"))(!if (!eq (!index self "current") "b")
 (!do
-(!line 272)(!callmeth self _next )
-(!line 273)(!callmeth self _save "\x08"))(!if (!eq (!index self "current") "f")
+(!line 271)(!callmeth self _next )
+(!line 272)(!callmeth self _save "\x08"))(!if (!eq (!index self "current") "f")
 (!do
-(!line 275)(!callmeth self _next )
-(!line 276)(!callmeth self _save "\x0C"))(!if (!eq (!index self "current") "n")
+(!line 274)(!callmeth self _next )
+(!line 275)(!callmeth self _save "\x0C"))(!if (!eq (!index self "current") "n")
 (!do
-(!line 278)(!callmeth self _next )
-(!line 279)(!callmeth self _save "\x0A"))(!if (!eq (!index self "current") "r")
+(!line 277)(!callmeth self _next )
+(!line 278)(!callmeth self _save "\x0A"))(!if (!eq (!index self "current") "r")
 (!do
-(!line 281)(!callmeth self _next )
-(!line 282)(!callmeth self _save "\x0D"))(!if (!eq (!index self "current") "t")
+(!line 280)(!callmeth self _next )
+(!line 281)(!callmeth self _save "\x0D"))(!if (!eq (!index self "current") "t")
 (!do
-(!line 284)(!callmeth self _next )
-(!line 285)(!callmeth self _save "\x09"))(!if (!eq (!index self "current") "v")
+(!line 283)(!callmeth self _next )
+(!line 284)(!callmeth self _save "\x09"))(!if (!eq (!index self "current") "v")
 (!do
-(!line 287)(!callmeth self _next )
-(!line 288)(!callmeth self _save "\x0B"))(!if (!eq (!index self "current") "x")
+(!line 286)(!callmeth self _next )
+(!line 287)(!callmeth self _save "\x0B"))(!if (!eq (!index self "current") "x")
 (!do
-(!line 290)(!define c (!callmeth self _readhexaesc ))
-(!line 291)(!callmeth self _next )
-(!line 292)(!callmeth self _save c))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
+(!line 289)(!define c (!callmeth self _readhexaesc ))
+(!line 290)(!callmeth self _next )
+(!line 291)(!callmeth self _save c))(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
 (!do
-(!line 295)(!callmeth self _inclinenumber )
-(!line 296)(!callmeth self _save "\x0A"))(!if (!eq (!index self "current") "\\")
+(!line 294)(!callmeth self _inclinenumber )
+(!line 295)(!callmeth self _save "\x0A"))(!if (!eq (!index self "current") "\\")
 (!do
-(!line 298)(!callmeth self _next )
-(!line 299)(!callmeth self _save "\\"))(!if (!eq (!index self "current") "\"")
+(!line 297)(!callmeth self _next )
+(!line 298)(!callmeth self _save "\\"))(!if (!eq (!index self "current") "\"")
 (!do
-(!line 301)(!callmeth self _next )
-(!line 302)(!callmeth self _save "\""))(!if (!eq (!index self "current") "'")
+(!line 300)(!callmeth self _next )
+(!line 301)(!callmeth self _save "\""))(!if (!eq (!index self "current") "'")
 (!do
-(!line 304)(!callmeth self _next )
-(!line 305)(!callmeth self _save "'"))(!if (!eq (!index self "current") "")
+(!line 303)(!callmeth self _next )
+(!line 304)(!callmeth self _save "'"))(!if (!eq (!index self "current") "")
 (!do)(!if (!eq (!index self "current") "z")
 (!do
-(!line 309)(!callmeth self _next )
-(!line 310)(!while (!call1 find space (!index self "current"))
+(!line 308)(!callmeth self _next )
+(!line 309)(!while (!call1 find space (!index self "current"))
 
-(!line 311)(!if (!call1 find newline (!index self "current"))
+(!line 310)(!if (!call1 find newline (!index self "current"))
 (!do
-(!line 312)(!callmeth self _inclinenumber ))(!do
-(!line 314)(!callmeth self _next )))))(!do
-(!line 318)(!if (!not (!call find digit (!index self "current")))
+(!line 311)(!callmeth self _inclinenumber ))(!do
+(!line 313)(!callmeth self _next )))))(!do
+(!line 317)(!if (!not (!call find digit (!index self "current")))
 (!do
-(!line 319)(!callmeth self _escerror (!index self "current") "invalid escape sequence")))
-(!line 321)(!callmeth self _save (!callmeth self _readdecesc ))))))))))))))))))(!do
-(!line 324)(!callmeth self _save_and_next ))))))
-(!line 327)(!callmeth self _save_and_next )
-(!line 328)(!assign (!index tok "seminfo") (!call sub (!call tconcat (!index self "buff")) 2 (!neg 2)))))
+(!line 318)(!callmeth self _escerror (!index self "current") "invalid escape sequence")))
+(!line 320)(!callmeth self _save (!callmeth self _readdecesc ))))))))))))))))))(!do
+(!line 323)(!callmeth self _save_and_next ))))))
+(!line 326)(!callmeth self _save_and_next )
+(!line 327)(!assign (!index tok "seminfo") (!call sub (!call tconcat (!index self "buff")) 2 (!neg 2)))))
 
-(!line 331)(!assign (!index L "_llex") (!lambda (self tok)
-(!line 332)(!callmeth self _resetbuffer )
-(!line 333)(!while !true
+(!line 330)(!assign (!index L "_llex") (!lambda (self tok)
+(!line 331)(!callmeth self _resetbuffer )
+(!line 332)(!while !true
 
-(!line 334)(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
+(!line 333)(!if (!or (!eq (!index self "current") "\x0A") (!eq (!index self "current") "\x0D"))
 (!do
-(!line 336)(!callmeth self _inclinenumber ))(!if (!or (!or (!or (!eq (!index self "current") " ") (!eq (!index self "current") "\x0C")) (!eq (!index self "current") "\x09")) (!eq (!index self "current") "\x0B"))
+(!line 335)(!callmeth self _inclinenumber ))(!if (!or (!or (!or (!eq (!index self "current") " ") (!eq (!index self "current") "\x0C")) (!eq (!index self "current") "\x09")) (!eq (!index self "current") "\x0B"))
 (!do
-(!line 341)(!callmeth self _next ))(!if (!eq (!index self "current") "-")
+(!line 340)(!callmeth self _next ))(!if (!eq (!index self "current") "-")
 (!do
-(!line 343)(!callmeth self _next )
-(!line 344)(!if (!ne (!index self "current") "-")
+(!line 342)(!callmeth self _next )
+(!line 343)(!if (!ne (!index self "current") "-")
 (!do
-(!line 345)(!return "-")))
-(!line 347)(!callmeth self _next )
-(!line 348)(!if (!eq (!index self "current") "[")
+(!line 344)(!return "-")))
+(!line 346)(!callmeth self _next )
+(!line 347)(!if (!eq (!index self "current") "[")
 (!do
-(!line 349)(!define sep (!callmeth self _skip_sep ))
-(!line 350)(!callmeth self _resetbuffer )
-(!line 351)(!if (!ge sep 0)
+(!line 348)(!define sep (!callmeth self _skip_sep ))
+(!line 349)(!callmeth self _resetbuffer )
+(!line 350)(!if (!ge sep 0)
 (!do
-(!line 352)(!callmeth self _read_long_string !nil sep)
-(!line 353)(!callmeth self _resetbuffer ))(!do
-(!line 355)(!while (!and (!not (!call find newline (!index self "current"))) (!ne (!index self "current") ""))
+(!line 351)(!callmeth self _read_long_string !nil sep)
+(!line 352)(!callmeth self _resetbuffer ))(!do
+(!line 354)(!while (!and (!not (!call find newline (!index self "current"))) (!ne (!index self "current") ""))
 
-(!line 356)(!callmeth self _next )))))(!do
-(!line 360)(!while (!and (!not (!call find newline (!index self "current"))) (!ne (!index self "current") ""))
+(!line 355)(!callmeth self _next )))))(!do
+(!line 359)(!while (!and (!not (!call find newline (!index self "current"))) (!ne (!index self "current") ""))
 
-(!line 361)(!callmeth self _next )))))(!if (!eq (!index self "current") "[")
+(!line 360)(!callmeth self _next )))))(!if (!eq (!index self "current") "[")
 (!do
-(!line 365)(!define sep (!callmeth self _skip_sep ))
-(!line 366)(!if (!ge sep 0)
+(!line 364)(!define sep (!callmeth self _skip_sep ))
+(!line 365)(!if (!ge sep 0)
 (!do
-(!line 367)(!callmeth self _read_long_string tok sep)
-(!line 368)(!return "<string>"))(!if (!eq sep (!neg 1))
+(!line 366)(!callmeth self _read_long_string tok sep)
+(!line 367)(!return "<string>"))(!if (!eq sep (!neg 1))
 (!do
-(!line 370)(!return "["))(!do
-(!line 372)(!callmeth self _lexerror "invalid long string delimiter" "<string>")))))(!if (!eq (!index self "current") "=")
+(!line 369)(!return "["))(!do
+(!line 371)(!callmeth self _lexerror "invalid long string delimiter" "<string>")))))(!if (!eq (!index self "current") "=")
 (!do
-(!line 375)(!callmeth self _next )
-(!line 376)(!if (!ne (!index self "current") "=")
+(!line 374)(!callmeth self _next )
+(!line 375)(!if (!ne (!index self "current") "=")
 (!do
-(!line 377)(!return "="))(!do
-(!line 379)(!callmeth self _next )
-(!line 380)(!return "=="))))(!if (!eq (!index self "current") "<")
+(!line 376)(!return "="))(!do
+(!line 378)(!callmeth self _next )
+(!line 379)(!return "=="))))(!if (!eq (!index self "current") "<")
 (!do
-(!line 383)(!callmeth self _next )
-(!line 384)(!if (!ne (!index self "current") "=")
+(!line 382)(!callmeth self _next )
+(!line 383)(!if (!ne (!index self "current") "=")
 (!do
-(!line 385)(!return "<"))(!do
-(!line 387)(!callmeth self _next )
-(!line 388)(!return "<="))))(!if (!eq (!index self "current") ">")
+(!line 384)(!return "<"))(!do
+(!line 386)(!callmeth self _next )
+(!line 387)(!return "<="))))(!if (!eq (!index self "current") ">")
 (!do
-(!line 391)(!callmeth self _next )
-(!line 392)(!if (!ne (!index self "current") "=")
+(!line 390)(!callmeth self _next )
+(!line 391)(!if (!ne (!index self "current") "=")
 (!do
-(!line 393)(!return ">"))(!do
-(!line 395)(!callmeth self _next )
-(!line 396)(!return ">="))))(!if (!eq (!index self "current") "~")
+(!line 392)(!return ">"))(!do
+(!line 394)(!callmeth self _next )
+(!line 395)(!return ">="))))(!if (!eq (!index self "current") "~")
 (!do
-(!line 399)(!callmeth self _next )
-(!line 400)(!if (!ne (!index self "current") "=")
+(!line 398)(!callmeth self _next )
+(!line 399)(!if (!ne (!index self "current") "=")
 (!do
-(!line 401)(!return "~"))(!do
-(!line 403)(!callmeth self _next )
-(!line 404)(!return "~="))))(!if (!eq (!index self "current") ":")
+(!line 400)(!return "~"))(!do
+(!line 402)(!callmeth self _next )
+(!line 403)(!return "~="))))(!if (!eq (!index self "current") ":")
 (!do
-(!line 407)(!callmeth self _next )
-(!line 408)(!if (!ne (!index self "current") ":")
+(!line 406)(!callmeth self _next )
+(!line 407)(!if (!ne (!index self "current") ":")
 (!do
-(!line 409)(!return ":"))(!do
-(!line 411)(!callmeth self _next )
-(!line 412)(!return "::"))))(!if (!or (!eq (!index self "current") "\"") (!eq (!index self "current") "'"))
+(!line 408)(!return ":"))(!do
+(!line 410)(!callmeth self _next )
+(!line 411)(!return "::"))))(!if (!or (!eq (!index self "current") "\"") (!eq (!index self "current") "'"))
 (!do
-(!line 416)(!callmeth self _read_string (!index self "current") tok)
-(!line 417)(!return "<string>"))(!if (!eq (!index self "current") ".")
+(!line 415)(!callmeth self _read_string (!index self "current") tok)
+(!line 416)(!return "<string>"))(!if (!eq (!index self "current") ".")
 (!do
-(!line 419)(!callmeth self _save_and_next )
+(!line 418)(!callmeth self _save_and_next )
+(!line 419)(!if (!callmeth1 self _check_next ".")
+(!do
 (!line 420)(!if (!callmeth1 self _check_next ".")
 (!do
-(!line 421)(!if (!callmeth1 self _check_next ".")
+(!line 421)(!return "..."))(!do
+(!line 423)(!return "..")))))
+(!line 426)(!if (!not (!call find digit (!index self "current")))
 (!do
-(!line 422)(!return "..."))(!do
-(!line 424)(!return "..")))))
-(!line 427)(!if (!not (!call find digit (!index self "current")))
+(!line 427)(!return "."))(!do
+(!line 429)(!callmeth self _read_numeral tok)
+(!line 430)(!return "<number>"))))(!if (!eq (!index self "current") "")
 (!do
-(!line 428)(!return "."))(!do
-(!line 430)(!callmeth self _read_numeral tok)
-(!line 431)(!return "<number>"))))(!if (!eq (!index self "current") "")
+(!line 433)(!return ""))(!if (!call1 find digit (!index self "current"))
 (!do
-(!line 434)(!return ""))(!if (!call1 find digit (!index self "current"))
+(!line 435)(!callmeth self _read_numeral tok)
+(!line 436)(!return "<number>"))(!do
+(!line 438)(!if (!call1 find alpha (!index self "current"))
 (!do
-(!line 436)(!callmeth self _read_numeral tok)
-(!line 437)(!return "<number>"))(!do
-(!line 439)(!if (!call1 find alpha (!index self "current"))
-(!do
-(!line 440)(!repeat
-(!line 441)(!callmeth self _save_and_next )
+(!line 439)(!repeat
+(!line 440)(!callmeth self _save_and_next )
 (!not (!call find alnum (!index self "current"))))
-(!line 443)(!assign (!index tok "seminfo") (!call tconcat (!index self "buff")))
-(!line 444)(!if (!index tokens (!index tok "seminfo"))
+(!line 442)(!assign (!index tok "seminfo") (!call tconcat (!index self "buff")))
+(!line 443)(!if (!index tokens (!index tok "seminfo"))
 (!do
-(!line 445)(!return (!index tok "seminfo")))(!do
-(!line 447)(!return "<name>"))))(!do
-(!line 450)(!define c (!index self "current"))
-(!line 451)(!callmeth self _next )
-(!line 452)(!return c))))))))))))))))))))
+(!line 444)(!return (!index tok "seminfo")))(!do
+(!line 446)(!return "<name>"))))(!do
+(!line 449)(!define c (!index self "current"))
+(!line 450)(!callmeth self _next )
+(!line 451)(!return c))))))))))))))))))))
 
-(!line 458)(!assign (!index L "next") (!lambda (self)
-(!line 459)(!assign (!index self "lastline") (!index self "linenumber"))
-(!line 460)(!if (!ne (!index (!index self "_lookahead") "token") "")
+(!line 457)(!assign (!index L "next") (!lambda (self)
+(!line 458)(!assign (!index self "lastline") (!index self "linenumber"))
+(!line 459)(!if (!index (!index self "_lookahead") "token")
 (!do
-(!line 461)(!assign (!index self "t") (!index self "_lookahead"))
-(!line 462)(!assign (!index self "_lookahead") ("token": "")))(!do
+(!line 460)(!assign (!index (!index self "t") "token") (!index (!index self "_lookahead") "token"))
+(!line 461)(!assign (!index (!index self "t") "seminfo") (!index (!index self "_lookahead") "seminfo"))
+(!line 462)(!assign (!index (!index self "_lookahead") "token") !false))(!do
 (!line 464)(!assign (!index (!index self "t") "token") (!callmeth self _llex (!index self "t")))))))
 
 (!line 468)(!assign (!index L "lookahead") (!lambda (self)
-(!line 469)(!call assert (!eq (!index (!index self "_lookahead") "token") ""))
+(!line 469)(!call assert (!not (!index (!index self "_lookahead") "token")))
 (!line 470)(!assign (!index (!index self "_lookahead") "token") (!callmeth self _llex (!index self "_lookahead")))
 (!line 471)(!return (!index (!index self "_lookahead") "token"))))
 

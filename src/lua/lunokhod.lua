@@ -128,15 +128,14 @@ function L:_inclinenumber ()
 end
 
 function L:setinput(z, source)
-    self._lookahead = { token = '' }
-    self.t = { token = '' }
+    self._lookahead = { token = false, seminfo = false }
     self.z = z
     self.linenumber = 1
     self.lastline = 1
     self.source = source
     self.buff = {}
     self.pos = 0
-    self:_next()
+    self.t = { token = self:_next(), seminfo = false }
 end
 
 --[[
@@ -457,16 +456,17 @@ end
 
 function L:next ()
     self.lastline = self.linenumber
-    if self._lookahead.token ~= '' then
-        self.t = self._lookahead
-        self._lookahead = { token = '' }
+    if self._lookahead.token then
+        self.t.token = self._lookahead.token
+        self.t.seminfo = self._lookahead.seminfo
+        self._lookahead.token = false
     else
         self.t.token = self:_llex(self.t)
     end
 end
 
 function L:lookahead ()
-    assert(self._lookahead.token == '')
+    assert(not self._lookahead.token)
     self._lookahead.token = self:_llex(self._lookahead)
     return self._lookahead.token
 end
