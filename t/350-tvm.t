@@ -236,7 +236,7 @@
 (!call is (!index (!call1 parse "(3.14)") 1) 3.14)
 
 (!define f (!call open "foo.tp" "w"))
-(!let code "(!assign foo (!lambda (x) (!return x)))")
+(!let code "(!assign foo (!lambda (x) (!return (\"\\x1Bkey\": 42))))")
 (!callmeth f write code)
 (!callmeth f close)
 (!call is (!call1 tostring (!call1 parsefile "foo.tp")) code "parsefile")

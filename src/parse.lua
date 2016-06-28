@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 
 local char = string.char
@@ -18,7 +18,7 @@ local wchar = tvm.wchar
 local io = require 'io'
 
 local function find (s, patt)
-    return patt ~= '' and _find(s, patt, 1, true)
+    return _find(s, patt, 1, true)
 end
 
 local digit = '0123456789'
@@ -38,7 +38,8 @@ end
 
 function P:_next ()
     self.pos = self.pos + 1
-    self.current = sub(self.z, self.pos, self.pos)
+    local c = sub(self.z, self.pos, self.pos)
+    self.current = (c ~= '') and c or '<eof>'
     return self.current
 end
 
@@ -56,8 +57,6 @@ function P:_txtToken (token)
         or token == '<string>'
         or token == '<number>' then
         return tconcat(self.buff)
-    elseif token == '' then
-        return '<eof>'
     else
         return token
     end
@@ -112,11 +111,10 @@ function P:setinput(z, source)
 end
 
 function P:_check_next (set)
-    if not find(set, self.current) then
-        return false
+    if find(set, self.current) then
+        self:_save_and_next()
+        return true
     end
-    self:_save_and_next()
-    return true
 end
 
 function P:_read_numeral ()
@@ -146,90 +144,89 @@ function P:_read_numeral ()
     self.token = '<number>'
 end
 
-function P:_escerror (c, msg)
-    self:_resetbuffer()
-    self:_save(c)
-    self:_lexerror(msg, '<string>')
+function P:_gethexa ()
+    self:_next()
+    local c = self.current
+    if not find(xdigit, c) then
+        self:_lexerror("hexadecimal digit expected", '<string>')
+    end
+    return tonumber(c, 16)
 end
 
 function P:_readhexaesc ()
-    local r = ''
-    for i = 1, 2 do
-        local c = self:_next()
-        r = r .. c
-        if not find(xdigit, c) then
-            self:_escerror('x' .. r, "hexadecimal digit expected")
-        end
-    end
-    return char(tonumber(r, 16))
+    local r = self:_gethexa()
+    r = (16 * r) + self:_gethexa()
+    return char(r)
 end
 
 function P:_readuniesc ()
-    local r = ''
-    for i = 1, 4 do
-        local c = self:_next()
-        r = r .. c
-        if not find(xdigit, c) then
-            self:_escerror('x' .. r, "hexadecimal digit expected")
-        end
-    end
-    return wchar(tonumber(r, 16))
+    local r = self:_gethexa()
+    r = (16 * r) + self:_gethexa()
+    r = (16 * r) + self:_gethexa()
+    r = (16 * r) + self:_gethexa()
+    return wchar(r)
 end
 
 function P:_read_string ()
     self:_save_and_next()
     while self.current ~= '"' do
-        if     self.current == '' then
-            self:_lexerror("unfinished string", '')
+        if     self.current == '<eof>' then
+            self:_lexerror("unfinished string", '<eof>')
         elseif self.current == '\\' then
+            local c
             self:_next()
             if     self.current == 'a' then
-                self:_next()
-                self:_save('\a')
+                c = '\a'
+                goto read_save
             elseif self.current == 'b' then
-                self:_next()
-                self:_save('\b')
+                c = '\b'
+                goto read_save
             elseif self.current == 'f' then
-                self:_next()
-                self:_save('\f')
+                c = '\f'
+                goto read_save
             elseif self.current == 'n' then
-                self:_next()
-                self:_save('\n')
+                c = '\n'
+                goto read_save
             elseif self.current == 'r' then
-                self:_next()
-                self:_save('\r')
+                c = '\r'
+                goto read_save
             elseif self.current == 't' then
-                self:_next()
-                self:_save('\t')
+                c = '\t'
+                goto read_save
             elseif self.current == 'v' then
-                self:_next()
-                self:_save('\v')
+                c = '\v'
+                goto read_save
             elseif self.current == 'x' then
-                local c = self:_readhexaesc()
-                self:_next()
-                self:_save(c)
+                c = self:_readhexaesc()
+                goto read_save
             elseif self.current == 'u' then
-                local c = self:_readuniesc()
-                self:_next()
-                self:_save(c)
+                c = self:_readuniesc()
+                goto read_save
             elseif self.current == '\n'
                 or self.current == '\r' then
                 self:_inclinenumber()
-                self:_save('\n')
+                c = '\n'
+                goto only_save
             elseif self.current == '\\' then
-                self:_next()
-                self:_save('\\')
+                c = '\\'
+                goto read_save
             elseif self.current == '"' then
-                self:_next()
-                self:_save('"')
+                c = '"'
+                goto read_save
             elseif self.current == '\'' then
-                self:_next()
-                self:_save('\'')
-            elseif self.current == '' then
+                c = '\''
+                goto read_save
+            elseif self.current == '<eof>' then
+                goto no_save
                 -- will raise an error next loop
             else
-                self:_escerror(self.current, "invalid escape sequence")
+                self:_lexerror("invalid escape sequence", '<string>')
             end
+::read_save::
+            self:_next()
+::only_save::
+            self:_save(c)
+::no_save::
         elseif self.current == '\n'
             or self.current == '\r' then
             self:_inclinenumber()
@@ -270,7 +267,7 @@ function P:next ()
             self:_next()
          elseif self.current == ';' then
              self:_next()
-             while not find(newline, self.current) and self.current ~= '' do
+             while not find(newline, self.current) and self.current ~= '<eof>' do
                 self:_next()
              end
         elseif self.current == '(' then
@@ -289,8 +286,8 @@ function P:next ()
             return self:_read_string()
         elseif find(digit_sign, self.current) then
             return self:_read_numeral()
-        elseif self.current == '' then
-            self.token = ''
+        elseif self.current == '<eof>' then
+            self.token = '<eof>'
             return
         else
             return self:_read_name()
@@ -358,14 +355,13 @@ end
 local function parse (s, chunkname)
     local p = setmetatable({}, { __index=P })
     p:setinput(s, chunkname or s)
-    p:BOM()
     p:shebang()
     local t = op{'!do'}
     p:next()
     while p.token == '(' do
         t:push(p:table())
     end
-    if p.token ~= '' then
+    if p.token ~= '<eof>' then
         p:syntaxerror("<eof> expected")
     end
     return #t == 2 and t[2] or t
