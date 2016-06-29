@@ -733,7 +733,7 @@ function P:body (ismethod, line)
     -- body ->  `(' parlist `)' block END
     local line = self.linenumber -- line
     self:checknext('(')
-    self.out[#self.out+1] = '('
+    self.out[#self.out+1] = '(!lambda ('
     self:parlist(ismethod)
     self:checknext(')')
     self.out[#self.out+1] = ')'
@@ -864,7 +864,6 @@ function P:simpleexpr (one)
         return
     elseif self.t.token == 'function' then
         self:next()
-        self.out[#self.out+1] = '(!lambda '
         self:body(false, self.linenumber)
         return
     else
@@ -1159,7 +1158,6 @@ function P:localfunc (line)
     self.out[#self.out+1] = name
     self.out[#self.out+1] = ')(!assign '
     self.out[#self.out+1] = name
-    self.out[#self.out+1] = ' (!lambda '
     self:body(false, self.linenumber)
     self.out[#self.out+1] = ')\n'
 end
@@ -1230,7 +1228,6 @@ function P:funcstat (line)
     self.out[#self.out+1] = line
     self.out[#self.out+1] = ')(!assign '
     local ismethod = self:funcname()
-    self.out[#self.out+1] = ' (!lambda '
     self:body(ismethod, line)
     self.out[#self.out+1] = ')\n'
 end
