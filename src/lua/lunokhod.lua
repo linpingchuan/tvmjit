@@ -954,35 +954,29 @@ function P:block ()
     self.out[#self.out+1] = ')'
 end
 
-function P:assignment (n, line)
+function P:assignment (var1)
     if self:testnext(',') then
         -- assignment -> `,' suffixedexp assignment
-        if n == 1 then
-            local var = self.out[#self.out]
-            self.out[#self.out] = '(!line '
-            self.out[#self.out+1] = line
-            self.out[#self.out+1] = ')(!massign ('
-            self.out[#self.out+1] = var
+        if var1 then
+            self.out[#self.out+1] = '(!massign ('
+            self.out[#self.out+1] = var1
         end
         self.out[#self.out+1] = ' '
         self:suffixedexp()
-        self:assignment(n + 1)
+        self:assignment()
     else
         -- assignment -> `=' explist
         self:checknext('=')
-        if n == 1 then
-            local var = self.out[#self.out]
-            self.out[#self.out] = '(!line '
-            self.out[#self.out+1] = line
-            self.out[#self.out+1] = ')(!assign '
-            self.out[#self.out+1] = var
+        if var1 then
+            self.out[#self.out+1] = '(!assign '
+            self.out[#self.out+1] = var1
             self.out[#self.out+1] = ' '
         else
             self.out[#self.out+1] = ') ('
         end
         self:explist()
         self.out[#self.out+1] = ')'
-        if n ~= 1 then
+        if not var1 then
             self.out[#self.out+1] = ')'
         end
     end
@@ -1225,18 +1219,17 @@ end
 
 function P:exprstat (line)
     -- stat -> func | assignment
+    self.out[#self.out+1] = '(!line '
+    self.out[#self.out+1] = line
+    self.out[#self.out+1] = ')'
     local sav = self.out
     self.out = {}
     self:suffixedexp()
     local out = tconcat(self.out)
     self.out = sav
     if self.t.token == '=' or self.t.token == ',' then
-        self.out[#self.out+1] = out
-        self:assignment(1, line)
+        self:assignment(out)
     else
-        self.out[#self.out+1] = '(!line '
-        self.out[#self.out+1] = line
-        self.out[#self.out+1] = ')'
         self.out[#self.out+1] = out
     end
 end
