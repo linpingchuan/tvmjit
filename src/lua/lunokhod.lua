@@ -659,26 +659,18 @@ function P:recfield ()
     self:expr(true)
 end
 
-function P:listfield (list)
-    -- listfield -> exp
-    if #list == 0 then
-        list[1] = true
-    end
-    self:expr()
-end
-
-function P:field (list)
+function P:field ()
     -- field -> listfield | recfield
     if     self.t.token == '<name>' then
         if self:lookahead() ~= '=' then
-            self:listfield(list)
+            self:expr() -- listfield -> exp
         else
             self:recfield()
         end
     elseif self.t.token == '[' then
         self:recfield()
     else
-        self:listfield(list)
+        self:expr()     -- listfield -> exp
     end
 end
 
@@ -687,12 +679,11 @@ function P:constructor ()
     local line = self.linenumber
     self:checknext('{')
     self.out[#self.out+1] = '('
-    local list = {}
     repeat
         if self.t.token == '}' then
             break
         end
-        self:field(list)
+        self:field()
         if self.t.token == ',' or self.t.token == ';' then
             self.out[#self.out+1] = ' '
         end
