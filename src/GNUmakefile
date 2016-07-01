@@ -618,6 +618,9 @@ depend:
 	  test -s $$file || $(HOST_RM) $$file; \
 	  done
 
+luacheck:
+	luacheck *.lua json/*.lua lua/*.lua
+
 .PHONY: default all amalg clean depend
 
 ##############################################################################

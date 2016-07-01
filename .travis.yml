@@ -8,10 +8,12 @@ install:
   - sudo apt-get install -qq luarocks
   - sudo luarocks install lpeg
   - sudo luarocks install linenoise
+  - sudo luarocks install luacheck
 
 # Build and test.
 script:
   - make
+  - make -C src luacheck
   - make -C src fulltest
 
 branches:
