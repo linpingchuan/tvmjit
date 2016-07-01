@@ -955,30 +955,21 @@ function P:block ()
 end
 
 function P:assignment (var1)
+    if var1 then
+        self.out[#self.out+1] = '(!massign ('
+        self.out[#self.out+1] = var1
+    end
     if self:testnext(',') then
         -- assignment -> `,' suffixedexp assignment
-        if var1 then
-            self.out[#self.out+1] = '(!massign ('
-            self.out[#self.out+1] = var1
-        end
         self.out[#self.out+1] = ' '
         self:suffixedexp()
         self:assignment()
     else
         -- assignment -> `=' explist
         self:checknext('=')
-        if var1 then
-            self.out[#self.out+1] = '(!assign '
-            self.out[#self.out+1] = var1
-            self.out[#self.out+1] = ' '
-        else
-            self.out[#self.out+1] = ') ('
-        end
+        self.out[#self.out+1] = ') ('
         self:explist()
-        self.out[#self.out+1] = ')'
-        if not var1 then
-            self.out[#self.out+1] = ')'
-        end
+        self.out[#self.out+1] = '))'
     end
 end
 
