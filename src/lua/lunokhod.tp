@@ -708,7 +708,7 @@
 (!line 924)(!massign ((!index (!index self "out") (!add (!len (!index self "out")) 1))) (uop))
 (!line 925)(!callmeth self expr !false 12)
 (!line 926)(!massign ((!index (!index self "out") (!add (!len (!index self "out")) 1))) (")")))(!do
-(!line 928)(!massign (pos) ((!callmeth self simpleexpr one)))))
+(!line 928)(!callmeth self simpleexpr one)))
 (!line 930)(!define out (!call tconcat (!index self "out")))
 (!line 931)(!define op (!index binop (!index (!index self "t") "token")))
 (!line 932)(!define prior (!index priority (!index (!index self "t") "token")))

@@ -925,7 +925,7 @@ function P:expr (one, limit)
         self:expr(false, 12)    -- UNARY_PRIORITY
         self.out[#self.out+1] = ')'
     else
-        pos = self:simpleexpr(one)
+        self:simpleexpr(one)
     end
     local out = tconcat(self.out)
     local op = binop[self.t.token]
