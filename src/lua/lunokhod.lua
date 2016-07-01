@@ -637,7 +637,7 @@ end
 function P:fieldsel ()
     -- fieldsel -> ['.' | ':'] NAME
     self:next()
-    self.out[#self.out+1] = quote(self:str_checkname())
+    return quote(self:str_checkname())
 end
 
 function P:yindex ()
@@ -787,12 +787,7 @@ function P:suffixedexp (one)
     while true do
         self.out = {}
         if     self.t.token == '.' then
-            self.out[#self.out+1] = '(!index '
-            self.out[#self.out+1] = out
-            self.out[#self.out+1] = ' '
-            self:fieldsel()
-            self.out[#self.out+1] = ')'
-            out = tconcat(self.out)
+            out = '(!index ' .. out .. ' ' .. self:fieldsel() .. ')'
         elseif self.t.token == '[' then
             self.out[#self.out+1] = '(!index '
             self.out[#self.out+1] = out
@@ -1173,21 +1168,11 @@ function P:funcname ()
     local ismethod = false
     local name = self:str_checkname()
     while self.t.token == '.' do
-        local sav = self.out
-        self.out = { '(!index ', name, ' ' }
-        self:fieldsel()
-        self.out[#self.out+1] = ')'
-        name = tconcat(self.out)
-        self.out = sav
+        name = '(!index ' .. name .. ' ' .. self:fieldsel() .. ')'
     end
     if self.t.token == ':' then
         ismethod = true
-        local sav = self.out
-        self.out = { '(!index ', name, ' ' }
-        self:fieldsel()
-        self.out[#self.out+1] = ')'
-        name = tconcat(self.out)
-        self.out = sav
+        name = '(!index ' .. name .. ' ' .. self:fieldsel() .. ')'
     end
     self.out[#self.out+1] = name
     return ismethod
