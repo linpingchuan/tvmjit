@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 --      see http://http://www.json.org/
 --      see RFC 4627
@@ -33,7 +33,6 @@ local capt_open_bracket = ws * C(P'[') * Cp()
 local capt_close_bracket = ws * C(P']') * Cp()
 local capt_open_brace = ws * C(P'{') * Cp()
 local capt_close_brace = ws * C(P'}') * Cp()
-local capt_quote = ws * C(P'"') * Cp()
 local capt_comma = ws * C(P',') * Cp()
 local capt_colon = ws * C(P':') * Cp()
 local digit = R'09'

@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 --
 --  see http://lolcode.com/specs/1.2
@@ -316,9 +316,9 @@ local function literal (s, pos, buffer, omg)
                 syntaxerror "interpolation not allowed"
             end
             buffer[#buffer+1] = '(!mconcat '
-            buffer[#buffer+1] = capt:gsub(":(%b{})", function (s)
-                                                        s = s:sub(2, -2)
-                                                        return '" ' .. tostring(s) .. ' "'
+            buffer[#buffer+1] = capt:gsub(":(%b{})", function (str)
+                                                        str = str:sub(2, -2)
+                                                        return '" ' .. tostring(str) .. ' "'
                                                      end)
             buffer[#buffer+1] = ')'
         else
@@ -615,7 +615,7 @@ local function wtf (s, pos, buffer)
     local case = {}
     local lbl = 1
     while not tok_oic:match(s, pos) do
-        local capt, posn = capt_case:match(s, pos)
+        capt, posn = capt_case:match(s, pos)
         if not posn then
             syntaxerror "OMG or OMGWTF expected"
         end
@@ -836,7 +836,7 @@ function statement (s, pos, buffer)
     assert(0)
 end
 
-function program (s, pos, buffer)
+local function program (s, pos, buffer)
     pos = skip_ws(s, pos)
     local capt, posn = capt_hai:match(s, pos)
     if not posn then

@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 --      see http://http://www.json.org/
 --      see RFC 4627
@@ -10,11 +10,9 @@
 local error = error
 local loadstring = tvm.load
 local op = tvm.op.new
-local pairs = pairs
 local quote = tvm.quote
 local tonumber = tonumber
 local tostring = tostring
-local type = type
 local rawset = rawset
 local wchar = tvm.wchar
 local peg = require 'lpeg'

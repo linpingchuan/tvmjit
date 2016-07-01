@@ -1,16 +1,14 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2016 Francois Perrad.
 --
 --      see http://http://www.json.org/
 --      see RFC 4627
 --
 
 local error = error
-local pairs = pairs
 local tonumber = tonumber
-local type = type
 local rawset = rawset
 local wchar = tvm.wchar
 local peg = require 'lpeg'

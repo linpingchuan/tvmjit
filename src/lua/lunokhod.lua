@@ -722,7 +722,6 @@ end
 
 function P:body (ismethod, line)
     -- body ->  `(' parlist `)' block END
-    local line = self.linenumber -- line
     self:checknext('(')
     self.out[#self.out+1] = '(!lambda ('
     self:parlist(ismethod)
@@ -1064,7 +1063,6 @@ function P:forlist (name, line)
     end
     self.out[#self.out+1] = ') ('
     self:checknext('in')
-    line = self.linenumber
     self:explist()
     self.out[#self.out+1] = ')'
     self:forbody()
@@ -1112,7 +1110,7 @@ function P:ifstat (line)
         self:block()
     end
     self:check_match('end', 'if', line)
-    for i = 1, n, 1 do
+    for _ = 1, n, 1 do
         self.out[#self.out+1] = ')'
     end
 end
@@ -1125,7 +1123,7 @@ function P:localfunc (line)
     self.out[#self.out+1] = name
     self.out[#self.out+1] = ')(!assign '
     self.out[#self.out+1] = name
-    self:body(false, self.linenumber)
+    self:body(false, line)
     self.out[#self.out+1] = ')\n'
 end
 
