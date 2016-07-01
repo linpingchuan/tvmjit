@@ -954,11 +954,7 @@ function P:block ()
     self.out[#self.out+1] = ')'
 end
 
-function P:assignment (var1)
-    if var1 then
-        self.out[#self.out+1] = '(!massign ('
-        self.out[#self.out+1] = var1
-    end
+function P:assignment ()
     if self:testnext(',') then
         -- assignment -> `,' suffixedexp assignment
         self.out[#self.out+1] = ' '
@@ -1219,7 +1215,9 @@ function P:exprstat (line)
     local out = tconcat(self.out)
     self.out = sav
     if self.t.token == '=' or self.t.token == ',' then
-        self:assignment(out)
+        self.out[#self.out+1] = '(!massign ('
+        self.out[#self.out+1] = out
+        self:assignment()
     else
         self.out[#self.out+1] = out
     end
