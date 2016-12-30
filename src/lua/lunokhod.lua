@@ -4,19 +4,25 @@
 --  Copyright (C) 2013-2016 Francois Perrad.
 --
 
-
 local _G = _G
+local string = string
+local table = table
+local tvm = tvm
+
+local error = error
+local format = string.format
+local quote = tvm.quote
+local setmetatable= setmetatable
+local tconcat = table.concat
+
+local L = {} do
+
 local assert = assert
 local band = bit.band
 local char = string.char
-local error = error
 local _find = string.find
-local format = string.format
-local quote = tvm.quote
 local rshift = bit.rshift
-local setmetatable= setmetatable
 local sub = string.sub
-local tconcat = table.concat
 local tonumber = tonumber
 
 local function find (s, patt)
@@ -56,8 +62,6 @@ local tokens = {
     ['until'] = true,
     ['while'] = true,
 }
-
-local L = {}
 
 function L:_resetbuffer ()
     self.buff = {}
@@ -560,7 +564,9 @@ function L:shebang ()
     end
 end
 
-local P = setmetatable({}, { __index=L })
+end -- module L
+
+local P = setmetatable({}, { __index=L }) do
 
 function P:error_expected (token)
     self:syntaxerror(token .. " expected")
@@ -1279,6 +1285,8 @@ function P:mainfunc ()
     self:statlist()
     self:check('<eof>')
 end
+
+end -- module P
 
 local function translate (s, fname)
     local p = setmetatable({}, { __index=P })

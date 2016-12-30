@@ -4,18 +4,26 @@
 --  Copyright (C) 2013-2016 Francois Perrad.
 --
 
+local io = io
+local string = string
+local table = table
+local tvm = tvm
+
+local assert = assert
+local setmetatable = setmetatable
+local op = tvm.op.new
+
+local P = {} do
+
 local char = string.char
 local error = error
 local _find = string.find
 local format = string.format
-local op = tvm.op.new
 local quote = tvm.quote
-local setmetatable= setmetatable
 local sub = string.sub
 local tconcat = table.concat
 local tonumber = tonumber
 local wchar = tvm.wchar
-local io = require 'io'
 
 local function find (s, patt)
     return _find(s, patt, 1, true)
@@ -29,8 +37,6 @@ local xdigit = 'ABCDEF'
 local newline = '\n\r'
 local space = ' \f\t\v'
 local not_name = '():' .. space .. newline
-
-local P = {}
 
 function P:_resetbuffer ()
     self.buff = {}
@@ -351,6 +357,8 @@ function P:table ()
     self:next()
     return t
 end
+
+end -- module P
 
 local function parse (s, chunkname)
     local p = setmetatable({}, { __index=P })
