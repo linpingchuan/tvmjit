@@ -45,15 +45,15 @@ function tvm.idiv (a, b)
     return meth and meth(a, b) or floor(a / b)
 end
 
-function tvm.lshift (a, b)
-    return (rawget(getmetatable(a) or {}, '__lshift')
-         or rawget(getmetatable(b) or {}, '__lshift')
+function tvm.shl (a, b)
+    return (rawget(getmetatable(a) or {}, '__shl')
+         or rawget(getmetatable(b) or {}, '__shl')
          or lshift)(a, b)
 end
 
-function tvm.rshift (a, b)
-    return (rawget(getmetatable(a) or {}, '__rshift')
-         or rawget(getmetatable(b) or {}, '__rshift')
+function tvm.shr (a, b)
+    return (rawget(getmetatable(a) or {}, '__shr')
+         or rawget(getmetatable(b) or {}, '__shr')
          or rshift)(a, b)
 end
 
