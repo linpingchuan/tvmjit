@@ -276,7 +276,7 @@ function L:_readutf8esc ()
         self:_esccheck(r <= 0x10FFFF, "UTF-8 value too large")
         self:_save_and_next()
     end
-    self:_esccheck(self.current == '}', "missing '}'");
+    self:_esccheck(self.current == '}', "missing '}'")
     self:_next()
     self:_buffremove(i)
     return r
@@ -969,28 +969,22 @@ function P:assignment ()
     end
 end
 
-function P:breakstat (line)
+function P:breakstat ()
     self:next()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!break)'
+    self.out[#self.out+1] = '(!break)'
 end
 
-function P:gotostat (line)
+function P:gotostat ()
     self:next()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!goto '
+    self.out[#self.out+1] = '(!goto '
     self.out[#self.out+1] = self:str_checkname()
     self.out[#self.out+1] = ')'
 end
 
-function P:labelstat (name, line)
+function P:labelstat ()
     -- label -> '::' NAME '::'
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!label '
-    self.out[#self.out+1] = name
+    self.out[#self.out+1] = '(!label '
+    self.out[#self.out+1] = self:str_checkname()
     self.out[#self.out+1] = ')'
     self:checknext('::')
 end
@@ -998,9 +992,7 @@ end
 function P:whilestat (line)
     -- whilestat -> WHILE cond DO block END
     self:next()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!while '
+    self.out[#self.out+1] = '(!while '
     self:expr(true)
     self.out[#self.out+1] = '\n'
     self:checknext('do')
@@ -1011,9 +1003,7 @@ end
 function P:repeatstat (line)
     -- repeatstat -> REPEAT block UNTIL cond
     self:next()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!repeat'
+    self.out[#self.out+1] = '(!repeat'
     self:statlist()
     self:check_match('until', 'repeat', line)
     self.out[#self.out+1] = '\n'
@@ -1035,12 +1025,10 @@ function P:forbody (name)
     self:block()
 end
 
-function P:fornum (name, line)
+function P:fornum (name)
     -- fornum -> NAME = exp1,exp1[,exp1] forbody
     self:checknext('=')
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!loop '
+    self.out[#self.out+1] = '(!loop '
     self.out[#self.out+1] = name
     self.out[#self.out+1] = ' '
 
@@ -1057,11 +1045,9 @@ function P:fornum (name, line)
     self:forbody(name)
 end
 
-function P:forlist (name, line)
+function P:forlist (name)
     -- forlist -> NAME {,NAME} IN explist forbody
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!for ('
+    self.out[#self.out+1] = '(!for ('
     self.out[#self.out+1] = name
     while self:testnext(',') do
         self.out[#self.out+1] = ' '
@@ -1079,10 +1065,10 @@ function P:forstat (line)
     self:next()
     local name = self:str_checkname()
     if     self.t.token == '=' then
-        self:fornum(name, line)
+        self:fornum(name)
     elseif self.t.token == ','
         or self.t.token == 'in' then
-        self:forlist(name, line)
+        self:forlist(name)
     else
         self:syntaxerror("'=' or 'in' expected")
     end
@@ -1102,9 +1088,6 @@ end
 
 function P:ifstat (line)
     -- ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block] END
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')'
     self:test_then_block()
     local n = 1
     while self.t.token == 'elseif' do
@@ -1123,9 +1106,7 @@ end
 
 function P:localfunc (line)
     local name = self:str_checkname()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!define '
+    self.out[#self.out+1] = '(!define '
     self.out[#self.out+1] = name
     self.out[#self.out+1] = ')(!assign '
     self.out[#self.out+1] = name
@@ -1133,11 +1114,9 @@ function P:localfunc (line)
     self.out[#self.out+1] = ')\n'
 end
 
-function P:localstat (line)
+function P:localstat ()
     -- stat -> LOCAL NAME {`,' NAME} [`=' explist]
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!define '
+    self.out[#self.out+1] = '(!define '
     local multi = false
     repeat
         local name = self:str_checkname()
@@ -1185,19 +1164,14 @@ end
 function P:funcstat (line)
     -- funcstat -> FUNCTION funcname body
     self:next()
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!assign '
+    self.out[#self.out+1] = '(!assign '
     local ismethod = self:funcname()
     self:body(ismethod, line)
     self.out[#self.out+1] = ')\n'
 end
 
-function P:exprstat (line)
+function P:exprstat ()
     -- stat -> func | assignment
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')'
     local sav = self.out
     self.out = {}
     self:suffixedexp()
@@ -1212,11 +1186,9 @@ function P:exprstat (line)
     end
 end
 
-function P:retstat (line)
+function P:retstat ()
     -- stat -> RETURN [explist] [';']
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')(!return '
+    self.out[#self.out+1] = '(!return '
     if not self:block_follow(true) and self.t.token ~= ';' then
         self:explist()
     end
@@ -1226,6 +1198,9 @@ end
 
 function P:statement ()
     local line = self.linenumber
+    self.out[#self.out+1] = '(!line '
+    self.out[#self.out+1] = line
+    self.out[#self.out+1] = ')'
     if     self.t.token == ';' then
         -- stat -> ';' (empty statement)
         self:next()
@@ -1238,9 +1213,7 @@ function P:statement ()
     elseif self.t.token == 'do' then
         -- stat -> DO block END
         self:next()
-        self.out[#self.out+1] = '(!line '
-        self.out[#self.out+1] = line
-        self.out[#self.out+1] = ')(!do'
+        self.out[#self.out+1] = '(!do'
         self:block()
         self:check_match('end', 'do', line)
     elseif self.t.token == 'for' then
@@ -1258,25 +1231,25 @@ function P:statement ()
         if self:testnext('function') then
             self:localfunc(line)
         else
-            self:localstat(line)
+            self:localstat()
         end
     elseif self.t.token == '::' then
         -- stat -> label
         self:next()
-        self:labelstat(self:str_checkname(), line)
+        self:labelstat()
     elseif self.t.token == 'return' then
         -- stat -> retstat
         self:next()
-        self:retstat(line)
+        self:retstat()
     elseif self.t.token == 'break' then
         -- stat -> breakstat
-        self:breakstat(line)
+        self:breakstat()
     elseif self.t.token == 'goto' then
         -- stat -> 'goto' NAME
-        self:gotostat(line)
+        self:gotostat()
     else
         -- stat -> func | assignment
-        self:exprstat(line)
+        self:exprstat()
     end
 end
 
