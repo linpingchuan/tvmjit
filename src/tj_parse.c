@@ -1003,6 +1003,28 @@ static void bcemit_unop(FuncState *fs, BCOp op, ExpDesc *e)
   e->k = VRELOCABLE;
 }
 
+/* Emit call. */
+static void bcemit_call(FuncState *fs, ExpDesc *e, ExpDesc *args)
+{
+  BCIns ins;
+  BCReg base;
+  BCLine line = fs->ls->linenumber;
+
+  lua_assert(e->k == VNONRELOC);
+  base = e->u.s.info;  /* Base register for call. */
+  if (args->k == VCALL) {
+    ins = BCINS_ABC(BC_CALLM, base, 2, args->u.s.aux - base - 1 - LJ_FR2);
+  } else {
+    if (args->k != VVOID)
+      expr_tonextreg(fs, args);
+    ins = BCINS_ABC(BC_CALL, base, 2, fs->freereg - base - LJ_FR2);
+  }
+  expr_init(e, VCALL, bcemit_INS(fs, ins));
+  e->u.s.aux = base;
+  fs->bcbase[fs->pc - 1].line = line;
+  fs->freereg = base+1;  /* Leave one result by default. */
+}
+
 /* -- Lexer support ------------------------------------------------------- */
 
 /* Check and consume optional token. */
@@ -1856,34 +1878,15 @@ static BCReg expr_list(LexState *ls, ExpDesc *v)
 }
 
 /* Parse function argument list. */
-static void parse_args(LexState *ls, ExpDesc *e)
+static void parse_args(LexState *ls, ExpDesc *args)
 {
-  FuncState *fs = ls->fs;
-  ExpDesc args;
-  BCIns ins;
-  BCReg base;
-  BCLine line = ls->linenumber;
-
   if (lex_opt(ls, ')'))
-    args.k = VVOID;
+    args->k = VVOID;
   else {
-    expr_list(ls, &args);
-    if (args.k == VCALL)  /* f(a, b, g()) or f(a, b, ...). */
-      setbc_b(bcptr(fs, &args), 0);  /* Pass on multiple results. */
+    expr_list(ls, args);
+    if (args->k == VCALL)  /* f(a, b, g()) or f(a, b, ...). */
+      setbc_b(bcptr(ls->fs, args), 0);  /* Pass on multiple results. */
   }
-  lua_assert(e->k == VNONRELOC);
-  base = e->u.s.info;  /* Base register for call. */
-  if (args.k == VCALL) {
-    ins = BCINS_ABC(BC_CALLM, base, 2, args.u.s.aux - base - 1 - LJ_FR2);
-  } else {
-    if (args.k != VVOID)
-      expr_tonextreg(fs, &args);
-    ins = BCINS_ABC(BC_CALL, base, 2, fs->freereg - base - LJ_FR2);
-  }
-  expr_init(e, VCALL, bcemit_INS(fs, ins));
-  e->u.s.aux = base;
-  fs->bcbase[fs->pc - 1].line = line;
-  fs->freereg = base+1;  /* Leave one result by default. */
 }
 
 /* Manage syntactic levels to avoid blowing up the stack. */
@@ -2207,22 +2210,25 @@ static void parse_assign(LexState *ls, ExpDesc *e)
 static void parse_call(LexState *ls, ExpDesc *v)
 {
   FuncState *fs = ls->fs;
+  ExpDesc args;
   expr(ls, v);
   expr_discharge(fs, v);
   expr_tonextreg(fs, v);
-  parse_args(ls, v);
+  parse_args(ls, &args);
+  bcemit_call(fs, v, &args);
 }
 
 /* Parse 'callmeth' statement. */
 static void parse_callmeth(LexState *ls, ExpDesc *v)
 {
   FuncState *fs = ls->fs;
-  ExpDesc key;
+  ExpDesc key, args;
   expr(ls, v);
   expr_discharge(fs, v);
   expr_str(ls, &key);
   bcemit_method(fs, v, &key);
-  parse_args(ls, v);
+  parse_args(ls, &args);
+  bcemit_call(fs, v, &args);
 }
 
 /* Parse 'let' statement. */
