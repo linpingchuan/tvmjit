@@ -33,8 +33,11 @@
 /* tVM special. */
 #define SPDEF(_) \
   _(vararg) _(nil) _(false) _(true) \
-  _(neg) _(not) _(len) \
+  _(neg) _(not) _(bnot) _(len) \
   _(add) _(sub) _(mul) _(div) _(mod) _(pow) \
+  _(idiv) \
+  _(band) _(bor) _(bxor) \
+  _(shl) _(shr) \
   _(concat) \
   _(eq) _(lt) _(le) _(ne) _(gt) _(ge) \
   _(and) _(or) \
@@ -1916,6 +1919,32 @@ static void parse_unop (LexState *ls, unsigned sp, ExpDesc *e)
   lex_check(ls, ')');
 }
 
+static void index4emulated (LexState *ls, const char *libname, const char *fctname, ExpDesc *v)
+{
+  FuncState *fs = ls->fs;
+  ExpDesc key;
+  expr_init(v, VGLOBAL, 0);
+  v->u.sval = lj_str_newz(ls->L, libname);
+  expr_toanyreg(fs, v);
+  expr_init(&key, VKSTR, 0);
+  key.u.sval = lj_str_newz(ls->L, fctname);
+  expr_toval(fs, &key);
+  expr_index(fs, v, &key);
+}
+
+
+static void parse_unop_bnot_emulated (LexState *ls, ExpDesc *e)
+{
+  FuncState *fs = ls->fs;
+  ExpDesc args;
+  index4emulated(ls, "tvm", "bnot", e);
+  expr_discharge(fs, e);
+  expr_tonextreg(fs, e);
+  expr(ls, &args);
+  lex_check(ls, ')');
+  bcemit_call(fs, e, &args);
+}
+
 static BinOpr token2binop(unsigned sp)
 {
   switch (sp) {
@@ -1949,6 +1978,41 @@ static void parse_binop (LexState *ls, unsigned sp, ExpDesc *e1)
   expr(ls, &e2);
   bcemit_binop(fs, op, e1, &e2);
   lex_check(ls, ')');
+}
+
+static void parse_binop_emulated (LexState *ls, unsigned sp, ExpDesc *e)
+{
+  FuncState *fs = ls->fs;
+  ExpDesc args;
+  switch (sp) {
+    case SP_idiv:
+      index4emulated(ls, "tvm", "idiv", e);
+      break;
+    case SP_band:
+      index4emulated(ls, "tvm", "band", e);
+      break;
+    case SP_bor:
+      index4emulated(ls, "tvm", "bor", e);
+      break;
+    case SP_bxor:
+      index4emulated(ls, "tvm", "bxor", e);
+      break;
+    case SP_shl:
+      index4emulated(ls, "tvm", "shl", e);
+      break;
+    case SP_shr:
+      index4emulated(ls, "tvm", "shr", e);
+      break;
+    default:
+      lua_assert(0);
+  }
+  expr_discharge(fs, e);
+  expr_tonextreg(fs, e);
+  expr(ls, &args);
+  expr_tonextreg(ls->fs, &args);
+  expr(ls, &args);
+  lex_check(ls, ')');
+  bcemit_call(fs, e, &args);
 }
 
 /* Parse 'mconcat' statement. */
@@ -2592,6 +2656,9 @@ static void parse_stmt(LexState *ls, ExpDesc *v)
 	case SP_len:
 	  parse_unop(ls, sp, v);
 	  break;
+	case SP_bnot:
+	  parse_unop_bnot_emulated(ls, v);
+	  goto gen_setoneret;
 	case SP_add:
 	case SP_sub:
 	case SP_mul:
@@ -2609,6 +2676,14 @@ static void parse_stmt(LexState *ls, ExpDesc *v)
 	case SP_or:
 	  parse_binop(ls, sp, v);
 	  break;
+	case SP_idiv:
+	case SP_band:
+	case SP_bor:
+	case SP_bxor:
+	case SP_shl:
+	case SP_shr:
+	  parse_binop_emulated(ls, sp, v);
+	  goto gen_setoneret;
 	case SP_assign:
 	  parse_assign(ls, v);
 	  break;
@@ -2620,23 +2695,13 @@ static void parse_stmt(LexState *ls, ExpDesc *v)
 	  break;
 	case SP_call1:
 	  parse_call(ls, v);
-	  /* gen_setoneret(v) */
-	  if (v->k == VCALL) {
-	    if (bc_op(*bcptr(ls->fs, v)) == BC_VARG) {  /* Vararg assignment. */
-	      ls->fs->freereg--;
-	      v->k = VRELOCABLE;
-	    } else {  /* Multiple call results. */
-	      v->u.s.info = v->u.s.aux;  /* Base of call is not relocatable. */
-	      v->k = VNONRELOC;
-	    }
-	  }
-	  break;
+	  goto gen_setoneret;
 	case SP_callmeth:
 	  parse_callmeth(ls, v);
 	  break;
 	case SP_callmeth1:
 	  parse_callmeth(ls, v);
-	  /* gen_setoneret(v) */
+gen_setoneret:
 	  if (v->k == VCALL) {
 	    if (bc_op(*bcptr(ls->fs, v)) == BC_VARG) {  /* Vararg assignment. */
 	      ls->fs->freereg--;
