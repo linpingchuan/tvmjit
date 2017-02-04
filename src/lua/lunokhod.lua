@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2016 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 local _G = _G
@@ -867,7 +867,7 @@ end
 local unop = {
     ['not']   = '(!not ',
     ['-']     = '(!neg ',
-    ['~']     = '(!call1 (!index tvm "bnot")',
+    ['~']     = '(!bnot ',
     ['#']     = '(!len ',
 }
 local binop = {
@@ -877,12 +877,12 @@ local binop = {
     ['%']     = '(!mod ',
     ['^']     = '(!pow ',
     ['/']     = '(!div ',
-    ['//']    = '(!call1 (!index tvm "idiv")',
-    ['&']     = '(!call1 (!index tvm "band")',
-    ['|']     = '(!call1 (!index tvm "bor")',
-    ['~']     = '(!call1 (!index tvm "bxor")',
-    ['<<']    = '(!call1 (!index tvm "shl")',
-    ['>>']    = '(!call1 (!index tvm "shr")',
+    ['//']    = '(!idiv ',
+    ['&']     = '(!band ',
+    ['|']     = '(!bor ',
+    ['~']     = '(!bxor ',
+    ['<<']    = '(!shl ',
+    ['>>']    = '(!shr ',
     ['..']    = '(!concat ',
     ['~=']    = '(!ne ',
     ['==']    = '(!eq ',

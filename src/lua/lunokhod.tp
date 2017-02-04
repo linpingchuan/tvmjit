@@ -697,8 +697,8 @@
 (!line 862)(!return ))))))))))
 (!line 864)(!callmeth self next )))
 
-(!line 867)(!define unop ("not": "(!not " "-": "(!neg " "~": "(!call1 (!index tvm \"bnot\")" "#": "(!len " ))
-(!line 873)(!define binop ("+": "(!add " "-": "(!sub " "*": "(!mul " "%": "(!mod " "^": "(!pow " "/": "(!div " "//": "(!call1 (!index tvm \"idiv\")" "&": "(!call1 (!index tvm \"band\")" "|": "(!call1 (!index tvm \"bor\")" "~": "(!call1 (!index tvm \"bxor\")" "<<": "(!call1 (!index tvm \"shl\")" ">>": "(!call1 (!index tvm \"shr\")" "..": "(!concat " "~=": "(!ne " "==": "(!eq " "<": "(!lt " "<=": "(!le " ">": "(!gt " ">=": "(!ge " "and": "(!and " "or": "(!or " ))
+(!line 867)(!define unop ("not": "(!not " "-": "(!neg " "~": "(!bnot " "#": "(!len " ))
+(!line 873)(!define binop ("+": "(!add " "-": "(!sub " "*": "(!mul " "%": "(!mod " "^": "(!pow " "/": "(!div " "//": "(!idiv " "&": "(!band " "|": "(!bor " "~": "(!bxor " "<<": "(!shl " ">>": "(!shr " "..": "(!concat " "~=": "(!ne " "==": "(!eq " "<": "(!lt " "<=": "(!le " ">": "(!gt " ">=": "(!ge " "and": "(!and " "or": "(!or " ))
 (!line 896)(!define priority ("+": (10 10) "-": (10 10) "*": (11 11) "%": (11 11) "^": (14 13) "/": (11 11) "//": (11 11) "&": (6 6) "|": (4 4) "~": (5 5) "<<": (7 7) ">>": (7 7) "..": (9 8) "==": (3 3) "<": (3 3) "<=": (3 3) "~=": (3 3) ">": (3 3) ">=": (3 3) "and": (2 2) "or": (1 1) ))
 (!line 921)(!assign (!index P "expr")(!lambda (self one limit)
 (!line 923)(!massign (limit) ((!or limit 0)))
