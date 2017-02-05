@@ -9,52 +9,144 @@ local band = bit.band
 local bnot = bit.bnot
 local bor = bit.bor
 local bxor = bit.bxor
+local error = error
 local floor = math.floor
 local getmetatable = getmetatable
-local lshift = bit.lshift
+local shl = bit.lshift
 local rawget = rawget
-local rshift = bit.rshift
+local shr = bit.rshift
+local tonumber = tonumber
 local tvm = tvm or {}
+local type = type
+
+local function operror (a)
+    error("attempt to perform bitwise operation on a " .. type(a) .. " value", 3)
+end
 
 function tvm.band (a, b)
-    return (rawget(getmetatable(a) or {}, '__band')
-         or rawget(getmetatable(b) or {}, '__band')
-         or band)(a, b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__band')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__band')
+    if meth then
+        return meth(a, b)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    if not tonumber(b) then
+        operror(b)
+    end
+    return band(a, b)
 end
 
 function tvm.bnot (a)
-    return (rawget(getmetatable(a) or {}, '__bnot')
-         or bnot)(a)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__bnot')
+    if meth then
+        return meth(a)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    return bnot(a)
 end
 
 function tvm.bor (a, b)
-    return (rawget(getmetatable(a) or {}, '__bor')
-         or rawget(getmetatable(b) or {}, '__bor')
-         or bor)(a, b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__bor')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__bor')
+    if meth then
+        return meth(a, b)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    if not tonumber(b) then
+        operror(b)
+    end
+    return bor(a, b)
 end
 
 function tvm.bxor (a, b)
-    return (rawget(getmetatable(a) or {}, '__bxor')
-         or rawget(getmetatable(b) or {}, '__bxor')
-         or bxor)(a, b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__bxor')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__bxor')
+    if meth then
+        return meth(a, b)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    if not tonumber(b) then
+        operror(b)
+    end
+    return bxor(a, b)
 end
 
 function tvm.idiv (a, b)
-    local meth = rawget(getmetatable(a) or {}, '__idiv')
-              or rawget(getmetatable(b) or {}, '__idiv')
-    return meth and meth(a, b) or floor(a / b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__idiv')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__idiv')
+    if meth then
+        return meth(a, b)
+    end
+    return floor(a / b)
 end
 
 function tvm.shl (a, b)
-    return (rawget(getmetatable(a) or {}, '__shl')
-         or rawget(getmetatable(b) or {}, '__shl')
-         or lshift)(a, b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__shl')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__shl')
+    if meth then
+        return meth(a, b)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    if not tonumber(b) then
+        operror(b)
+    end
+    return shl(a, b)
 end
 
 function tvm.shr (a, b)
-    return (rawget(getmetatable(a) or {}, '__shr')
-         or rawget(getmetatable(b) or {}, '__shr')
-         or rshift)(a, b)
+    local mt = getmetatable(a)
+    local meth = mt and rawget(mt, '__shr')
+    if meth then
+        return meth(a, b)
+    end
+    mt = getmetatable(b)
+    meth = mt and rawget(mt, '__shr')
+    if meth then
+        return meth(a, b)
+    end
+    if not tonumber(a) then
+        operror(a)
+    end
+    if not tonumber(b) then
+        operror(b)
+    end
+    return shr(a, b)
 end
 
 return tvm
