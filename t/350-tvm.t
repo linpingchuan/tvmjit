@@ -231,7 +231,7 @@
 (!call is (!call1 tostring (!call1 parse "\n(!do () ())")) "\n(!do () ())")
 
 (!call is (!call1 tostring (!call1 parse "(1 !true \"foo\")")) "(1 !true \"foo\")")
-(!call is (!call1 tostring (!call1 parse "(\"no\": 0 \"yes\": 1)")) "(\"no\": 0 \"yes\": 1)")
+(!call is (!call1 tostring (!call1 parse "(\"bar\": 42)")) "(\"bar\": 42)")
 (!call is (!call1 tostring (!call1 parse "(1 (-2e1 (+3)))")) "(1 (-20 (3)))")
 (!call is (!index (!call1 parse "(3.14)") 1) 3.14)
 

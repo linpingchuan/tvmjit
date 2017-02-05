@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2016 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 local io = io
@@ -19,7 +19,7 @@ local char = string.char
 local error = error
 local _find = string.find
 local format = string.format
-local quote = tvm.quote
+local str = tvm.str
 local sub = string.sub
 local tconcat = table.concat
 local tonumber = tonumber
@@ -331,7 +331,7 @@ function P:expr ()
     elseif token == '<string>' then
         local v = self.seminfo
         self:next()
-        return quote(v)
+        return str(v)
     elseif token == '<number>'
         or token == '<name>' then
         local v = self.seminfo
