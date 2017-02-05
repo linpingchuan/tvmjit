@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 --
@@ -84,9 +84,20 @@ local op = {
         new = function (t)
                         return setmetatable(t, op_mt)
         end,
+        _NAME = 'op',
 }
 op_mt.__index = op
 tvm.op = op
+
+local str_mt = {
+        __tostring = function (o)
+                        return tvm.quote(o[1])
+        end,
+}
+
+function tvm.str (s)
+    return setmetatable({s}, str_mt)
+end
 
 return tvm
 

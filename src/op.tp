@@ -1,13 +1,14 @@
 
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 
 (!let pairs pairs)
 (!let setmetatable setmetatable)
 (!let tostring tostring)
 (!let type type)
+(!let quote (!index tvm "quote"))
 (!let tconcat (!index table "concat"))
 
 (!let need_newline ("!line": !true "!do": !true))
@@ -30,9 +31,16 @@
                         (!assign (!index self k) v)
                         (!return self))
         "new": (!lambda (t)
-                        (!return (!call1 setmetatable t op_mt))) ))
+                        (!return (!call1 setmetatable t op_mt)))
+        "_NAME": "op"))
 (!assign (!index op_mt "__index") op)
 (!assign (!index tvm "op") op)
+
+(!let str_mt ("__tostring": (!lambda (o)
+                (!return (!call1 quote (!index o 1)))) ))
+
+(!assign (!index tvm "str") (!lambda (s)
+                (!return (!call1 setmetatable (s) str_mt))))
 
 (!assign (!index tvm "concat") (!lambda (t sep i j)
                 (!let t2 ())

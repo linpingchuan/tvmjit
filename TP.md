@@ -261,7 +261,7 @@ like [`loadfile`](http://www.lua.org/manual/5.2/manual.html#pdf-loadfile) (5.2) 
 
 #### `tvm.op.new (table)`
 
-constructor of `op` representation.
+constructor of `op` representation which could be stringified with `tostring`.
 
 #### `tvm.op:addkv (k, v)`
 
@@ -278,6 +278,10 @@ parses a TP chunk from a file and returns a `op` tree.
 #### `tvm.quote (s)`
 
 returns a quoted string (not printable character are escaped) suitable to be safely read back by the TP interpreter.
+
+#### `tvm.str (s)`
+
+returns a table with `tostring(tvm.str(s))` is equal to `tvm.quote(s)`.
 
 #### `tvm.unpack (list [, i [, j ]])`
 
@@ -330,23 +334,23 @@ Here, an example with the code generation library :
 
     (!let concat (!index tvm "concat"))
     (!let op (!index (!index tvm "op") "new"))
-    (!let quote (!index tvm "quote"))
+    (!let str (!index tvm "str"))
     (!let insert (!index table "insert"))
 
     (!let o (
         (!call1 op ("!line" 1))
-        (!call1 op ("!call" "print" (!call1 quote "hello")))
+        (!call1 op ("!call" "print" (!call1 str "hello")))
         (!call1 op ("!line" 2))
-        (!call1 op ("!let" "h" (!call1 op ((!call1 quote "no"): 0 (!call1 quote "yes"): 1))))
+        (!call1 op ("!let" "h" (!call1 op ((!call1 str "no"): 0 (!call1 str "yes"): 1))))
         (!call1 op ("!line" 3))
-        (!call1 op ("!let" "a" (!call1 op (0: (!call1 quote "zero") (!call1 quote "one") (!call1 quote "two")))))
+        (!call1 op ("!let" "a" (!call1 op (0: (!call1 str "zero") (!call1 str "one") (!call1 str "two")))))
         (!callmeth1 (!call1 op ("!line"))
                     push 4)
         (!call1 op ("!let" "h" (!callmeth1 (!call1 op ())
-                                           addkv (!call1 quote "key") (!call1 quote "value"))))
+                                           addkv (!call1 str "key") (!call1 str "value"))))
     ))
     (!call insert o (!call1 op ("!line" 5)))
-    (!call insert o (!call1 op ("!call" "print" (!call1 op ("!index" "h" (!call1 quote "key"))))))
+    (!call insert o (!call1 op ("!call" "print" (!call1 op ("!index" "h" (!call1 str "key"))))))
     (!call print (!call1 concat o))
 
 
