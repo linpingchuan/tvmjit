@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -13,7 +13,7 @@
 (!let error_contains error_contains)
 (!let is is)
 
-(!call plan 24)
+(!call plan 31)
 
 (!call error_contains (!lambda () (!return (!neg !true)))
                        ": attempt to perform arithmetic on a boolean value"
@@ -22,6 +22,10 @@
 (!call error_contains (!lambda () (!return (!len !true)))
                       ": attempt to get length of a boolean value"
                       "!len !true")
+
+(!call error_contains (!lambda () (!return (!bnot !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!bnot !true")
 
 (!call is (!not !false) !true "!not !false")
 
@@ -52,6 +56,30 @@
 (!call error_contains (!lambda () (!return (!concat !true "end")))
                       ": attempt to concatenate a boolean value"
                       "!concat !true \"end\"")
+
+(!call error_contains (!lambda () (!return (!idiv !true 3)))
+                      ": attempt to perform arithmetic on a boolean value"
+                      "!idiv !true 3")
+
+(!call error_contains (!lambda () (!return (!band !true 7)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!band !true 7")
+
+(!call error_contains (!lambda () (!return (!bor !true 1)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!bor !true 1")
+
+(!call error_contains (!lambda () (!return (!bxor !true 4)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!bxor !true 4")
+
+(!call error_contains (!lambda () (!return (!shr !true 5)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!shr !true 5")
+
+(!call error_contains (!lambda () (!return (!shl !true 2)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!shl !true 2")
 
 (!call is (!eq !true !true) !true "!eq !true !true")
 

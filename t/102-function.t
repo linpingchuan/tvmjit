@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -16,7 +16,7 @@
 (!let is is)
 (!let ok ok)
 
-(!call plan 51)
+(!call plan 65)
 
 (!define f (!lambda () (!return 1)))
 
@@ -33,6 +33,13 @@
 
 (!call error_contains (!lambda () (!assign f print)(!return (!len f)))
                       ": attempt to get length of")
+
+(!call error_contains (!lambda () (!return (!bnot f)))
+                      ": attempt to perform bitwise operation on"
+                      "!bnot f")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!bnot f)))
+                       ": attempt to perform bitwise operation on")
 
 (!call is (!not f) !false "!not f")
 
@@ -86,6 +93,48 @@
 
 (!call error_contains (!lambda () (!assign f print)(!return (!concat f "end")))
                       ": attempt to concatenate")
+
+(!call error_contains (!lambda () (!return (!idiv f 3)))
+                      ": attempt to perform arithmetic on"
+                      "!idiv f 3")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!idiv f 3)))
+                      ": attempt to perform arithmetic on")
+
+(!call error_contains (!lambda () (!return (!band f 7)))
+                      ": attempt to perform bitwise operation on"
+                      "!band f 7")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!band f 7)))
+                      ": attempt to perform bitwise operation on")
+
+(!call error_contains (!lambda () (!return (!bor f 1)))
+                      ": attempt to perform bitwise operation on"
+                      "!bor f 1")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!bor f 1)))
+                      ": attempt to perform bitwise operation on")
+
+(!call error_contains (!lambda () (!return (!bxor f 4)))
+                      ": attempt to perform bitwise operation on"
+                      "!bxor f 4")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!bxor f 4)))
+                      ": attempt to perform bitwise operation on")
+
+(!call error_contains (!lambda () (!return (!shr f 5)))
+                      ": attempt to perform bitwise operation on"
+                      "!shr f 5")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!shr f 5)))
+                      ": attempt to perform bitwise operation on")
+
+(!call error_contains (!lambda () (!return (!shl f 2)))
+                      ": attempt to perform bitwise operation on"
+                      "!shl f 2")
+
+(!call error_contains (!lambda () (!assign f print)(!return (!shl f 2)))
+                      ": attempt to perform bitwise operation on")
 
 (!define g f)
 (!call is (!eq f g) !true "!eq f f")

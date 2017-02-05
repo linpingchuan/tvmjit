@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -13,7 +13,7 @@
 (!let error_contains error_contains)
 (!let is is)
 
-(!call plan 51)
+(!call plan 77)
 
 (!call is (!neg "1") -1 "!neg \"1\"")
 
@@ -22,6 +22,12 @@
                       "!neg \"text\"")
 
 (!call is (!len "text") 4 "!len \"text\"")
+
+(!call is (!bnot "4") -5 "!bnot \"4\"")
+
+(!call error_contains (!lambda () (!return (!bnot "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!bnot \"text\"")
 
 (!call is (!not "text") !false "!not \"text\"")
 
@@ -36,6 +42,18 @@
 (!call is (!mod "-25" 3) 2 "!mod \"-25\" 3")
 
 (!call is (!pow "3" 3) 27 "!pow \"3\" 3")
+
+(!call is (!idiv "25" 3) 8 "!idiv \"25\" 3")
+
+(!call is (!band "3" 7) 3 "!band \"3\" 7")
+
+(!call is (!bor "4" 1) 5 "!bor \"4\" 1")
+
+(!call is (!bxor "7" 1) 6 "!bxor \"7\" 1")
+
+(!call is (!shr "100" 5) 3 "!shr \"100\" 5")
+
+(!call is (!shl "3" 2) 12 "!shl \"3\" 2")
 
 (!call error_contains (!lambda () (!return (!add "10" !true)))
                       ": attempt to perform arithmetic on a boolean value"
@@ -61,6 +79,30 @@
                       ": attempt to perform arithmetic on a boolean value"
                       "!pow \"3\" !true")
 
+(!call error_contains (!lambda () (!return (!idiv "25" ())))
+                      ": attempt to perform arithmetic on a table value"
+                      "!idiv \"25\" ()")
+
+(!call error_contains (!lambda () (!return (!band "3" !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!band \"3\" !true")
+
+(!call error_contains (!lambda () (!return (!bor "4" !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!bor \"4\" !true")
+
+(!call error_contains (!lambda () (!return (!bxor "7" !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!bxor \"7\" !true")
+
+(!call error_contains (!lambda () (!return (!shr "100" !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!shr \"100\" !true")
+
+(!call error_contains (!lambda () (!return (!shl "3" !true)))
+                      ": attempt to perform bitwise operation on a boolean value"
+                      "!shl \"3\" !true")
+
 (!call error_contains (!lambda () (!return (!add "10" "text")))
                       ": attempt to perform arithmetic on a string value"
                       "!add \"10\" \"text\"")
@@ -85,6 +127,30 @@
                       ": attempt to perform arithmetic on a string value"
                       "!pow \"3\" \"text\"")
 
+(!call error_contains (!lambda () (!return (!idiv "25" "text")))
+                      ": attempt to perform arithmetic on a string value"
+                      "!idiv \"25\" \"text\"")
+
+(!call error_contains (!lambda () (!return (!band "3" "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!band \"3\" \"text\"")
+
+(!call error_contains (!lambda () (!return (!bor "4" "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!bor \"4\" \"text\"")
+
+(!call error_contains (!lambda () (!return (!bxor "7" "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!bxor \"7\" \"text\"")
+
+(!call error_contains (!lambda () (!return (!shr "100" "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!shr \"100\" \"text\"")
+
+(!call error_contains (!lambda () (!return (!shl "3" "text")))
+                      ": attempt to perform bitwise operation on a string value"
+                      "!shl \"3\" \"text\"")
+
 (!call is (!add "10" "2") 12 "!add \"10\" \"2\"")
 
 (!call is (!sub "2" "10") -8 "!sub \"2\" \"10\"")
@@ -96,6 +162,18 @@
 (!call is (!mod "-25" "3") 2 "!mod \"-25\" \"3\"")
 
 (!call is (!pow "3" "3") 27 "!pow \"3\" \"3\"")
+
+(!call is (!idiv "25" "3") 8 "!idiv \"25\" \"3\"")
+
+(!call is (!band "3" "7") 3 "!band \"3\" \"7\"")
+
+(!call is (!bor "4" "1") 5 "!bor \"4\" \"1\"")
+
+(!call is (!bxor "7" "1") 6 "!bxor \"7\" \"1\"")
+
+(!call is (!shr "100" "5") 3 "!shr \"100\" \"5\"")
+
+(!call is (!shl "3" "2") 12 "!shl \"3\" \"2\"")
 
 (!call is (!concat "1" "end") "1end" "!concat \"1\" \"end\"")
 

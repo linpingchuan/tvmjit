@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -14,7 +14,7 @@
 (!let is is)
 (!let ok ok)
 
-(!call plan 25)
+(!call plan 32)
 
 (!let u (!index io "stderr"))
 
@@ -25,6 +25,10 @@
 (!call error_contains (!lambda () (!return (!len u)))
                       ": attempt to get length of"
                       "!len u")
+
+(!call error_contains (!lambda () (!return (!bnot u)))
+                      ": attempt to perform bitwise operation on"
+                      "!bnot u")
 
 (!call is (!not u) !false "!not u")
 
@@ -55,6 +59,30 @@
 (!call error_contains (!lambda () (!return (!concat u "end")))
                       ": attempt to concatenate"
                       "!concat u \"end\"")
+
+(!call error_contains (!lambda () (!return (!idiv u 3)))
+                      ": attempt to perform arithmetic on"
+                      "!idiv u 3")
+
+(!call error_contains (!lambda () (!return (!band u 7)))
+                      ": attempt to perform bitwise operation on"
+                      "!band u 7")
+
+(!call error_contains (!lambda () (!return (!bor u 1)))
+                      ": attempt to perform bitwise operation on"
+                      "!bor u 1")
+
+(!call error_contains (!lambda () (!return (!bxor u 4)))
+                      ": attempt to perform bitwise operation on"
+                      "!bxor u 4")
+
+(!call error_contains (!lambda () (!return (!shr u 5)))
+                      ": attempt to perform bitwise operation on"
+                      "!shr u 5")
+
+(!call error_contains (!lambda () (!return (!shl u 2)))
+                      ": attempt to perform bitwise operation on"
+                      "!shl u 2")
 
 (!call is (!eq u u) !true "!eq u u")
 

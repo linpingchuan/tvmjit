@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2016 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -13,7 +13,7 @@
 (!let error_contains error_contains)
 (!let is is)
 
-(!call plan 29)
+(!call plan 36)
 
 (!call error_contains (!lambda () (!return (!neg ())))
                       ": attempt to perform arithmetic on"
@@ -21,6 +21,10 @@
 
 (!call is (!len ()) 0 "!len ()")
 (!call is (!len (4 5 6)) 3)
+
+(!call error_contains (!lambda () (!return (!bnot ())))
+                      ": attempt to perform bitwise operation on a table value"
+                      "!bnot ()")
 
 (!call is (!not ()) !false "!not ()")
 
@@ -51,6 +55,30 @@
 (!call error_contains (!lambda () (!return (!concat () "end")))
                       ": attempt to concatenate"
                       "!concat () \"end\"")
+
+(!call error_contains (!lambda() (!return (!idiv () 3)))
+                      ": attempt to perform arithmetic on"
+                      "!idiv () 3")
+
+(!call error_contains (!lambda() (!return (!band () 7)))
+                      ": attempt to perform bitwise operation on"
+                      "!band () 7")
+
+(!call error_contains (!lambda() (!return (!bor () 1)))
+                      ": attempt to perform bitwise operation on"
+                      "!bor () 1")
+
+(!call error_contains (!lambda() (!return (!bxor () 4)))
+                      ": attempt to perform bitwise operation on"
+                      "!bxor () 4")
+
+(!call error_contains (!lambda() (!return (!shr () 5)))
+                      ": attempt to perform bitwise operation on"
+                      "!shr () 5")
+
+(!call error_contains (!lambda() (!return (!shl () 2)))
+                      ": attempt to perform bitwise operation on"
+                      "!shl () 2")
 
 (!call is (!eq () ()) !false "!eq () ()")
 

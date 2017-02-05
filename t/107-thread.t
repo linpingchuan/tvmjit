@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -15,7 +15,7 @@
 (!let ok ok)
 (!let coroutine coroutine)
 
-(!call plan 25)
+(!call plan 32)
 
 (!let co (!call (!index coroutine "create") (!lambda () (!return 1))))
 
@@ -26,6 +26,10 @@
 (!call error_contains (!lambda () (!return (!len co)))
                       ": attempt to get length of"
                       "!len co")
+
+(!call error_contains (!lambda () (!return (!bnot co)))
+                      ": attempt to perform bitwise operation on"
+                      "!bnot co")
 
 (!call is (!not co) !false "!not co")
 
@@ -56,6 +60,30 @@
 (!call error_contains (!lambda () (!return (!concat co "end")))
                       ": attempt to concatenate"
                       "!concat co \"end\"")
+
+(!call error_contains (!lambda () (!return (!idiv co 3)))
+                      ": attempt to perform arithmetic on"
+                      "!idiv co 3")
+
+(!call error_contains (!lambda () (!return (!band co 7)))
+                      ": attempt to perform bitwise operation on"
+                      "!band co 7")
+
+(!call error_contains (!lambda () (!return (!bor co 1)))
+                      ": attempt to perform bitwise operation on"
+                      "!bor co 1")
+
+(!call error_contains (!lambda () (!return (!bxor co 4)))
+                      ": attempt to perform bitwise operation on"
+                      "!bxor co 4")
+
+(!call error_contains (!lambda () (!return (!shr co 5)))
+                      ": attempt to perform bitwise operation on"
+                      "!shr co 5")
+
+(!call error_contains (!lambda () (!return (!shl co 2)))
+                      ": attempt to perform bitwise operation on"
+                      "!shl co 2")
 
 (!call is (!eq co co) !true "!eq co co")
 

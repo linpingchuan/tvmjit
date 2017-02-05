@@ -1,10 +1,10 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
-;   Copyright (c) 2009-2011 Francois Perrad
+;   Copyright (c) 2009-2015 Francois Perrad
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -13,7 +13,7 @@
 (!let error_contains error_contains)
 (!let is is)
 
-(!call plan 24)
+(!call plan 31)
 
 (!call error_contains (!lambda () (!return (!neg !nil)))
                       ": attempt to perform arithmetic on a nil value"
@@ -22,6 +22,10 @@
 (!call error_contains (!lambda () (!return (!len !nil)))
                       ": attempt to get length of a nil value"
                       "!len !nil")
+
+(!call error_contains (!lambda () (!return (!bnot !nil)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!bnot !nil")
 
 (!call is (!not !nil) !true "!not !nil")
 
@@ -52,6 +56,30 @@
 (!call error_contains (!lambda () (!return (!concat !nil "end")))
                       ": attempt to concatenate a nil value"
                       "!concat !nil \"end\"")
+
+(!call error_contains (!lambda () (!return (!idiv !nil 3)))
+                      ": attempt to perform arithmetic on a nil value"
+                      "!idiv !nil 3")
+
+(!call error_contains (!lambda () (!return (!band !nil 7)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!band !nil 7")
+
+(!call error_contains (!lambda () (!return (!bor !nil 1)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!bor !nil 1")
+
+(!call error_contains (!lambda () (!return (!bxor !nil 4)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!bxor !nil 4")
+
+(!call error_contains (!lambda () (!return (!shr !nil 5)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!shr !nil 5")
+
+(!call error_contains (!lambda () (!return (!shl !nil 2)))
+                      ": attempt to perform bitwise operation on a nil value"
+                      "!shl !nil 2")
 
 (!call is (!eq !nil !nil) !true "!eq !nil !nil")
 
