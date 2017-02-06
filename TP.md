@@ -267,6 +267,12 @@ constructor of `op` representation which could be stringified with `tostring`.
 
 #### `tvm.op:push (v)`
 
+#### `tvm.ops.new (table)`
+
+constructor of `ops` representation which could be stringified with `tostring`.
+
+#### `tvm.ops:push (v)`
+
 #### `tvm.parse (s [, chunkname])`
 
 parses a TP chunk from a string and returns a `op` tree.
@@ -334,10 +340,10 @@ Here, an example with the code generation library :
 
     (!let concat (!index tvm "concat"))
     (!let op (!index (!index tvm "op") "new"))
+    (!let ops (!index (!index tvm "ops") "new"))
     (!let str (!index tvm "str"))
-    (!let insert (!index table "insert"))
 
-    (!let o (
+    (!let o (!call1 ops (
         (!call1 op ("!line" 1))
         (!call1 op ("!call" "print" (!call1 str "hello")))
         (!call1 op ("!line" 2))
@@ -348,10 +354,10 @@ Here, an example with the code generation library :
                     push 4)
         (!call1 op ("!let" "h" (!callmeth1 (!call1 op ())
                                            addkv (!call1 str "key") (!call1 str "value"))))
-    ))
-    (!call insert o (!call1 op ("!line" 5)))
-    (!call insert o (!call1 op ("!call" "print" (!call1 op ("!index" "h" (!call1 str "key"))))))
-    (!call print (!call1 concat o))
+    )))
+    (!callmeth o push (!call1 op ("!line" 5)))
+    (!callmeth o push (!call1 op ("!call" "print" (!call1 op ("!index" "h" (!call1 str "key"))))))
+    (!call print o)
 
 
 `$ ./tvmjit ost.t`

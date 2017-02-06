@@ -36,6 +36,21 @@
 (!assign (!index op_mt "__index") op)
 (!assign (!index tvm "op") op)
 
+(!let ops_mt ("__tostring": (!lambda (o)
+                (!let t ())
+                (!loop i 1 (!len o) 1
+                        (!assign (!index t (!add (!len t) 1)) (!call1 tostring (!index o i))))
+                (!return (!call tconcat t))) ))
+(!let ops (
+        "push": (!lambda (self v)
+                        (!assign (!index self (!add (!len self) 1)) v)
+                        (!return self))
+        "new": (!lambda (t)
+                        (!return (!call1 setmetatable t ops_mt)))
+        "_NAME": "ops"))
+(!assign (!index ops_mt "__index") ops)
+(!assign (!index tvm "ops") ops)
+
 (!let str_mt ("__tostring": (!lambda (o)
                 (!return (!call1 quote (!index o 1)))) ))
 

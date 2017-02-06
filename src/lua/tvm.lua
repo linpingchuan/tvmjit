@@ -89,6 +89,29 @@ local op = {
 op_mt.__index = op
 tvm.op = op
 
+local ops_mt = {
+        __tostring = function (o)
+                        local t = {}
+                        for i = 1, #o do
+                            t[i] = tostring(o[i])
+                        end
+                        return tconcat(t)
+        end,
+}
+
+local ops = {
+        push = function (self, v)
+                        self[#self+1] = v
+                        return self
+        end,
+        new = function (t)
+                        return setmetatable(t, ops_mt)
+        end,
+        _NAME = 'ops',
+}
+ops_mt.__index = ops
+tvm.ops = ops
+
 local str_mt = {
         __tostring = function (o)
                         return tvm.quote(o[1])
