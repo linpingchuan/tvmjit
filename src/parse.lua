@@ -11,7 +11,7 @@ local tvm = tvm
 
 local assert = assert
 local setmetatable = setmetatable
-local op = tvm.op.new
+local ops = tvm.ops.new
 
 local P = {} do
 
@@ -23,6 +23,7 @@ local str = tvm.str
 local sub = string.sub
 local tconcat = table.concat
 local tonumber = tonumber
+local op = tvm.op.new
 local wchar = tvm.wchar
 
 local function find (s, patt)
@@ -364,15 +365,15 @@ local function parse (s, chunkname)
     local p = setmetatable({}, { __index=P })
     p:setinput(s, chunkname or s)
     p:shebang()
-    local t = op{'!do'}
+    local ast = ops{}
     p:next()
     while p.token == '(' do
-        t:push(p:table())
+        ast:push(p:table())
     end
     if p.token ~= '<eof>' then
         p:syntaxerror("<eof> expected")
     end
-    return #t == 2 and t[2] or t
+    return ast
 end
 tvm.parse = parse
 

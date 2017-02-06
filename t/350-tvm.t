@@ -227,13 +227,13 @@
 
 (!call is (!call1 tostring (!call1 parse "()")) "()" "parse")
 (!call is (!call1 tostring (!call1 parse ";\n() ; comment")) "()")
-(!call is (!call1 tostring (!call1 parse "()()")) "\n(!do () ())")
+(!call is (!call1 tostring (!call1 parse "()()")) "()()")
 (!call is (!call1 tostring (!call1 parse "\n(!do () ())")) "\n(!do () ())")
 
 (!call is (!call1 tostring (!call1 parse "(1 !true \"foo\")")) "(1 !true \"foo\")")
 (!call is (!call1 tostring (!call1 parse "(\"bar\": 42)")) "(\"bar\": 42)")
 (!call is (!call1 tostring (!call1 parse "(1 (-2e1 (+3)))")) "(1 (-20 (3)))")
-(!call is (!index (!call1 parse "(3.14)") 1) 3.14)
+(!call is (!call1 tostring (!call1 parse "(3.14)")) "(3.14)")
 
 (!define f (!call open "foo.tp" "w"))
 (!let code "(!assign foo (!lambda (x) (!return (\"\\x1Bkey\": 42))))")
