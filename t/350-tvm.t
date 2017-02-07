@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2015 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -19,6 +19,7 @@
 (!let load (!index tvm "load"))
 (!let loadfile (!index tvm "loadfile"))
 (!let op (!index (!index tvm "op") "new"))
+(!let ops (!index (!index tvm "ops") "new"))
 (!let open (!index io "open"))
 (!let parse (!index tvm "parse"))
 (!let parsefile (!index tvm "parsefile"))
@@ -30,7 +31,7 @@
 (!let error_contains error_contains)
 (!let type_ok type_ok)
 
-(!call plan 74)
+(!call plan 67)
 
 (!call contains (!index tvm "_VERSION") "TvmJIT 0.2.0" "variable _VERSION")
 
@@ -193,19 +194,6 @@
 (!call contains msg "foo.tp:")
 (!call unlink "foo.tp") ; clean up
 
-(!define t ("a" "b" "c" "d" "e"))
-(!call is (!call concat t) "abcde" "function concat")
-(!call is (!call concat t ",") "a,b,c,d,e")
-(!call is (!call concat t "," 2) "b,c,d,e")
-(!call is (!call concat t "," 2 4) "b,c,d")
-(!call is (!call concat t "," 4 2) "")
-
-(!define t ("a" "b" 3 "d" "e"))
-(!call is (!call concat t ",") "a,b,3,d,e" "function concat (number)")
-
-(!define t ("a" "b" !true "d" "e"))
-(!call is (!call concat t ",") "a,b,true,d,e")
-
 (!let o1 (!call1 op ("!call" "print" (!call1 quote "hello"))))
 (!call is (!call1 tostring o1) "(!call print \"hello\")" "op")
 (!let o2 (!call1 op ((!call1 quote "no"): 0 (!call1 quote "yes"): 1)))
@@ -219,11 +207,11 @@
 (!callmeth o5 addkv (!call1 quote "key") (!call1 quote "value"))
 (!call is (!call1 tostring o5) "(\"key\": \"value\")")
 
-(!let o ((!call1 op ("!line" 1)) o1))
-(!call is (!call1 concat o) "\n(!line 1)(!call print \"hello\")" "ops")
-(!call insert o (!call1 op ("!line" 2)))
-(!call insert o o1)
-(!call is (!call1 concat o) "\n(!line 1)(!call print \"hello\")\n(!line 2)(!call print \"hello\")")
+(!let o (!call1 ops ((!call op ("!line" 1)) o1)))
+(!call is (!call1 tostring o) "\n(!line 1)(!call print \"hello\")" "ops")
+(!callmeth o push (!call1 op ("!line" 2)))
+(!callmeth o push o1)
+(!call is (!call1 tostring o) "\n(!line 1)(!call print \"hello\")\n(!line 2)(!call print \"hello\")")
 
 (!call is (!call1 tostring (!call1 parse "()")) "()" "parse")
 (!call is (!call1 tostring (!call1 parse ";\n() ; comment")) "()")

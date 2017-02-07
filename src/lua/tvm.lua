@@ -24,14 +24,6 @@ _ENV = nil
 local tvm = {}
 _G.tvm = tvm
 
-function tvm.concat (t, sep)
-    local t2 = {}
-    for i = 1, #t do
-        t2[i] = tostring(t[i])
-    end
-    return tconcat(t2, sep)
-end
-
 function tvm.escape (s)
     return (gsub(s, '[():%s]', function (c) return '\\' .. c end))
 end

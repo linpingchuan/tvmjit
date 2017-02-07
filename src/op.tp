@@ -57,9 +57,3 @@
 (!assign (!index tvm "str") (!lambda (s)
                 (!return (!call1 setmetatable (s) str_mt))))
 
-(!assign (!index tvm "concat") (!lambda (t sep i j)
-                (!let t2 ())
-                (!loop i (!or i 1) (!or j (!len t)) 1
-                        (!assign (!index t2 (!add (!len t2) 1)) (!call1 tostring (!index t i))))
-                (!return (!call tconcat t2 sep))))
-
