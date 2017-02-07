@@ -22,7 +22,6 @@
 
 #include "lj_arch.h"
 #include "op.h"
-#include "parse.h"
 #include "lunokhod.h"
 #include "op53.h"
 
@@ -535,8 +534,6 @@ static int pmain(lua_State *L)
   s->status = tvm_loadbufferx(L, luaJIT_BC_op, luaJIT_BC_op_SIZE, "op", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
-  s->status = tvm_loadbufferx(L, luaJIT_BC_parse, luaJIT_BC_parse_SIZE, "parse", "b")
-           || docall(L, 0, 1);
   if (s->status != 0) return 0;
   s->status = tvm_loadbufferx(L, luaJIT_BC_lunokhod, luaJIT_BC_lunokhod_SIZE, "lunokhod", "b")
            || docall(L, 0, 1);

@@ -746,15 +746,6 @@ else
 	$(Q)touch $@
 endif
 
-parse.h: parse.lua
-ifdef REGEN
-	$(E) "GEN       $@"
-	$(Q)$(RUN_TVMJIT) -b $< $@
-else
-	$(E) "TOUCH     $@"
-	$(Q)touch $@
-endif
-
 lua/lunokhod.tp: lua/lunokhod.lua
 	$(E) "GEN       $@"
 	$(Q)$(RUN_TVMJIT) lua/lunokhod.tp $< > lua/lunokhod.j

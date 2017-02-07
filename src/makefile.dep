@@ -239,7 +239,7 @@ tj_parse.o: tj_parse.c lj_obj.h lua.h luaconf.h lj_def.h lj_arch.h \
  lj_func.h lj_state.h lj_bc.h lj_ctype.h lj_strfmt.h tj_lex.h tj_parse.h \
  lj_vm.h lj_vmevent.h
 tvmjit.o: tvmjit.c lua.h luaconf.h lauxlib.h lualib.h tvmjit.h tvmconf.h \
- luajit.h lj_arch.h op.h parse.h lunokhod.h op53.h
+ luajit.h lj_arch.h op.h lunokhod.h op53.h
 host/buildvm.o: host/buildvm.c host/buildvm.h lj_def.h lua.h luaconf.h \
  lj_arch.h lj_obj.h lj_def.h lj_arch.h lj_gc.h lj_obj.h lj_bc.h lj_ir.h \
  lj_ircall.h lj_ir.h lj_jit.h lj_frame.h lj_bc.h lj_dispatch.h lj_ctype.h \
