@@ -80,6 +80,7 @@ local op = {
 }
 op_mt.__index = op
 tvm.op = op
+tvm.op_mt = op_mt
 
 local ops_mt = {
         __tostring = function (o)
@@ -103,12 +104,14 @@ local ops = {
 }
 ops_mt.__index = ops
 tvm.ops = ops
+tvm.ops_mt = ops_mt
 
 local str_mt = {
         __tostring = function (o)
                         return tvm.quote(o[1])
         end,
 }
+tvm.str_mt = str_mt
 
 function tvm.str (s)
     return setmetatable({s}, str_mt)

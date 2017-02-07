@@ -31,7 +31,7 @@
 (!let error_contains error_contains)
 (!let type_ok type_ok)
 
-(!call plan 67)
+(!call plan 69)
 
 (!call contains (!index tvm "_VERSION") "TvmJIT 0.2.0" "variable _VERSION")
 
@@ -206,12 +206,14 @@
 (!let o5 (!call1 op ()))
 (!callmeth o5 addkv (!call1 quote "key") (!call1 quote "value"))
 (!call is (!call1 tostring o5) "(\"key\": \"value\")")
+(!call type_ok (!index tvm "op_mt") "table" "op_mt")
 
 (!let o (!call1 ops ((!call op ("!line" 1)) o1)))
 (!call is (!call1 tostring o) "\n(!line 1)(!call print \"hello\")" "ops")
 (!callmeth o push (!call1 op ("!line" 2)))
 (!callmeth o push o1)
 (!call is (!call1 tostring o) "\n(!line 1)(!call print \"hello\")\n(!line 2)(!call print \"hello\")")
+(!call type_ok (!index tvm "ops_mt") "table" "ops_mt")
 
 (!call is (!call1 tostring (!call1 parse "()")) "()" "parse")
 (!call is (!call1 tostring (!call1 parse ";\n() ; comment")) "()")

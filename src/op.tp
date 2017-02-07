@@ -35,6 +35,7 @@
         "_NAME": "op"))
 (!assign (!index op_mt "__index") op)
 (!assign (!index tvm "op") op)
+(!assign (!index tvm "op_mt") op_mt)
 
 (!let ops_mt ("__tostring": (!lambda (o)
                 (!let t ())
@@ -50,10 +51,11 @@
         "_NAME": "ops"))
 (!assign (!index ops_mt "__index") ops)
 (!assign (!index tvm "ops") ops)
+(!assign (!index tvm "ops_mt") ops_mt)
 
 (!let str_mt ("__tostring": (!lambda (o)
                 (!return (!call1 quote (!index o 1)))) ))
-
+(!assign (!index tvm "str_mt") str_mt)
 (!assign (!index tvm "str") (!lambda (s)
                 (!return (!call1 setmetatable (s) str_mt))))
 
