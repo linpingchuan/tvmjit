@@ -215,6 +215,37 @@ LJLIB_CF(tvm_dofile)
   return (int)(L->top - L->base) - 1;
 }
 
+static int parse_aux (lua_State *L, int status) {
+  if (status == 0) {
+    return 1;
+  } else {
+    setnilV(L->top-2);
+    return 2;
+  }
+}
+
+LJLIB_CF(tvm_parsefile)
+{
+  GCstr *fname = lj_lib_optstr(L, 1);
+  int status = tvm_parsefile(L, fname ? strdata(fname) : NULL);
+  return parse_aux(L, status);
+}
+
+LJLIB_CF(tvm_parse)
+{
+  GCstr *name = lj_lib_optstr(L, 2);
+  int status;
+  if (L->base < L->top && (tvisstr(L->base) || tvisnumber(L->base))) {
+    GCstr *s = lj_lib_checkstr(L, 1);
+    status = tvm_parsebuffer(L, strdata(s), s->len, strdata(name ? name : s));
+  } else {
+    lj_lib_checkfunc(L, 1);
+    lua_settop(L, 4);  /* Reserve a slot for the string from the reader. */
+    status = tvm_parse(L, tvm_reader_func, NULL, name ? strdata(name) : "=(parse)");
+  }
+  return parse_aux(L, status);
+}
+
 /* ------------------------------------------------------------------------ */
 
 #include "lj_libdef.h"

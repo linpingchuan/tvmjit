@@ -94,6 +94,9 @@ LUALIB_API int (tvm_loadfilex) (lua_State *L, const char *filename,
 				const char *mode);
 LUALIB_API int (tvm_loadbufferx) (lua_State *L, const char *buff, size_t sz,
 				  const char *name, const char *mode);
+LUALIB_API int (tvm_parsefile) (lua_State *L, const char *filename);
+LUALIB_API int (tvm_parsebuffer) (lua_State *L, const char *buff, size_t sz,
+				  const char *name);
 
 /*
 ** ===============================================================

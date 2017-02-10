@@ -157,6 +157,73 @@ LUALIB_API int tvm_loadstring(lua_State *L, const char *s)
   return tvm_loadbuffer(L, s, strlen(s), s);
 }
 
+static TValue *tpparser(lua_State *L, lua_CFunction dummy, void *ud)
+{
+  LexState *ls = (LexState *)ud;
+  UNUSED(dummy);
+  cframe_errfunc(L->cframe) = -1;  /* Inherit error function. */
+  lj_lex_setup(L, ls);
+  lj_parse_tree(ls);
+  return NULL;
+}
+
+LUA_API int tvm_parse(lua_State *L, lua_Reader reader, void *data,
+		      const char *chunkname)
+{
+  LexState ls;
+  int status;
+  ls.rfunc = reader;
+  ls.rdata = data;
+  ls.chunkarg = chunkname ? chunkname : "?";
+  ls.mode = "t";
+  lj_buf_init(L, &ls.sb);
+  status = lj_vm_cpcall(L, NULL, &ls, tpparser);
+  lj_lex_cleanup(L, &ls);
+  lj_gc_check(L);
+  return status;
+}
+
+LUALIB_API int tvm_parsefile(lua_State *L, const char *filename)
+{
+  FileReaderCtx ctx;
+  int status;
+  const char *chunkname;
+  if (filename) {
+    ctx.fp = fopen(filename, "rb");
+    if (ctx.fp == NULL) {
+      lua_pushfstring(L, "cannot open %s: %s", filename, strerror(errno));
+      return LUA_ERRFILE;
+    }
+    chunkname = lua_pushfstring(L, "@%s", filename);
+  } else {
+    ctx.fp = stdin;
+    chunkname = "=stdin";
+  }
+  status = tvm_parse(L, reader_file, &ctx, chunkname);
+  if (ferror(ctx.fp)) {
+    L->top -= filename ? 2 : 1;
+    lua_pushfstring(L, "cannot read %s: %s", chunkname+1, strerror(errno));
+    if (filename)
+      fclose(ctx.fp);
+    return LUA_ERRFILE;
+  }
+  if (filename) {
+    L->top--;
+    copyTV(L, L->top-1, L->top);
+    fclose(ctx.fp);
+  }
+  return status;
+}
+
+LUALIB_API int tvm_parsebuffer(lua_State *L, const char *buf, size_t size,
+			       const char *name)
+{
+  StringReaderCtx ctx;
+  ctx.str = buf;
+  ctx.size = size;
+  return tvm_parse(L, reader_string, &ctx, name);
+}
+
 /* -- Dump bytecode ------------------------------------------------------- */
 
 LUA_API int lua_dump(lua_State *L, lua_Writer writer, void *data)

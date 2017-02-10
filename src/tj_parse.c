@@ -261,9 +261,11 @@ GCstr *lj_parse_keepstr(LexState *ls, const char *str, size_t len)
   /* NOBARRIER: the key is new or kept alive. */
   lua_State *L = ls->L;
   GCstr *s = lj_str_new(L, str, len);
-  TValue *tv = lj_tab_setstr(L, ls->fs->kt, s);
-  if (tvisnil(tv)) setboolV(tv, 1);
-  lj_gc_check(L);
+  if (ls->fs) {
+    TValue *tv = lj_tab_setstr(L, ls->fs->kt, s);
+    if (tvisnil(tv)) setboolV(tv, 1);
+    lj_gc_check(L);
+  }
   return s;
 }
 
@@ -2884,4 +2886,94 @@ void lj_parse_init(lua_State *L)
     fixstring(s);  /* Reserved words are never collected. */
     s->reserved = (uint8_t)(i+1);
   }
+}
+
+static void parse_table(LexState *ls, int level);
+
+static void parse_expr(LexState *ls, int level)
+{
+  lua_State *L = ls->L;
+  switch (ls->tok) {
+    case '(': {
+      lj_lex_next(ls);
+      parse_table(ls, level);
+      break;
+    }
+    case TK_number: {
+      if (LJ_HASFFI && tviscdata(&ls->tokval))
+        setcdataV(L, L->top, cdataV(&ls->tokval));
+      else
+        setnumV(L->top, numV(&ls->tokval));
+      incr_top(L);
+      lj_lex_next(ls);
+      break;
+    }
+    case TK_string: {
+      lua_createtable(L, 1, 0);
+      lua_pushvalue(L, level);  /* tvm.str_mt */
+      lua_setmetatable(L, -2);
+      setstrV(L, L->top, strV(&ls->tokval));
+      incr_top(L);
+      lua_rawseti(L, -2, 1);
+      lj_lex_next(ls);
+      break;
+    }
+    case TK_name: {
+      setstrV(L, L->top, strV(&ls->tokval));
+      incr_top(L);
+      lj_lex_next(ls);
+      break;
+    }
+    default:
+      err_syntax(ls, LJ_ERR_XEXPR);
+      break;
+  }
+}
+
+void parse_table(LexState *ls, int level)
+{
+  lua_State *L = ls->L;
+  int idx = 1;
+  lua_newtable(L);
+  lua_pushvalue(L, level - 1);  /* tvm.op_mt */
+  lua_setmetatable(L, -2);
+  while (!lex_opt(ls, ')')) {
+    parse_expr(ls, level - 1);
+    if (lex_opt(ls, ':')) {
+      parse_expr(ls, level - 2);
+      lua_rawset(L, -3);
+    } else {
+      lua_rawseti(L, -2, idx++);
+    }
+  }
+}
+
+void lj_parse_tree(LexState *ls)
+{
+  lua_State *L = ls->L;
+  int idx = 1;
+#ifdef LUAJIT_DISABLE_DEBUGINFO
+  ls->chunkname = lj_str_newlit(L, "=");
+#else
+  ls->chunkname = lj_str_newz(L, ls->chunkarg);
+#endif
+  setstrV(L, L->top, ls->chunkname);  /* Anchor chunkname string. */
+  incr_top(L);
+  lua_getglobal(L, "tvm");
+  lua_getfield(L, -1, "op_mt");
+  lua_getfield(L, -2, "str_mt");
+  lua_newtable(L);
+  lua_getfield(L, -4, "ops_mt");  /* tvm.ops_mt */
+  lua_setmetatable(L, -2);
+  lj_lex_next(ls);  /* Read-ahead first token. */
+  while (lex_opt(ls, '(')) {
+    parse_table(ls, -3);
+    lua_rawseti(L, -2, idx++);
+  }
+  if (ls->tok != TK_eof)
+    err_token(ls, TK_eof);
+  lua_remove(L, -2); /* tvm.str_mt */
+  lua_remove(L, -2); /* tvm.op_mt */
+  lua_remove(L, -2); /* tvm */
+  lua_remove(L, -2); /* chunkname */
 }

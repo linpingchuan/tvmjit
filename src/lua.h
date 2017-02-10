@@ -351,6 +351,8 @@ LUA_API int lua_loadx (lua_State *L, lua_Reader reader, void *dt,
 /* Tvm */
 LUA_API int tvm_loadx (lua_State *L, lua_Reader reader, void *dt,
 		       const char *chunkname, const char *mode);
+LUA_API int tvm_parse (lua_State *L, lua_Reader reader, void *dt,
+		       const char *chunkname);
 
 struct lua_Debug {
   int event;
