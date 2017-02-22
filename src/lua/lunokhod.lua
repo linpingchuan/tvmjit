@@ -11,9 +11,11 @@ local tvm = tvm
 
 local error = error
 local format = string.format
-local quote = tvm.quote
+local op = tvm.op.new
+local ops = tvm.ops.new
+local str = tvm.str
 local setmetatable= setmetatable
-local tconcat = table.concat
+local tostring = tostring
 
 local L = {} do
 
@@ -24,6 +26,7 @@ local _find = string.find
 local rshift = bit.rshift
 local sub = string.sub
 local tonumber = tonumber
+local tconcat = table.concat
 
 local function find (s, patt)
     return _find(s, patt, 1, true)
@@ -628,55 +631,50 @@ function P:block_follow (withuntil)
     end
 end
 
-function P:statlist ()
+function P:statlist (ast)
     -- statlist -> { stat [`;'] }
     while not self:block_follow(true) do
-        self.out[#self.out+1] = '\n'
         if self.t.token == 'return' then
-            self:statement()
+            self:statement(ast)
             return
         end
-        self:statement()
+        self:statement(ast)
     end
 end
 
 function P:fieldsel ()
     -- fieldsel -> ['.' | ':'] NAME
     self:next()
-    return quote(self:str_checkname())
+    return str(self:str_checkname())
 end
 
 function P:yindex ()
     -- index -> '[' expr ']'
     self:next()
-    self:expr(true)
+    local exp = self:expr(true)
     self:checknext(']')
+    return exp
 end
 
-function P:recfield ()
+function P:recfield (ast)
     -- recfield -> (NAME | `['exp1`]') = exp1
-    if self.t.token == '<name>' then
-        self.out[#self.out+1] = quote(self:str_checkname())
-    else
-        self:yindex()
-    end
+    local key = self.t.token == '<name>' and str(self:str_checkname()) or self:yindex()
     self:checknext('=')
-    self.out[#self.out+1] = ': '
-    self:expr(true)
+    ast:addkv(key, self:expr(true))
 end
 
-function P:field ()
+function P:field (ast)
     -- field -> listfield | recfield
     if     self.t.token == '<name>' then
         if self:lookahead() ~= '=' then
-            self:expr() -- listfield -> exp
+            ast:push(self:expr())       -- listfield -> exp
         else
-            self:recfield()
+            self:recfield(ast)
         end
     elseif self.t.token == '[' then
-        self:recfield()
+        self:recfield(ast)
     else
-        self:expr()     -- listfield -> exp
+        ast:push(self:expr())           -- listfield -> exp
     end
 end
 
@@ -684,83 +682,70 @@ function P:constructor ()
     -- constructor -> '{' [ field { sep field } [sep] ] '}'
     local line = self.linenumber
     self:checknext('{')
-    self.out[#self.out+1] = '('
+    local op_ctor = op{}
     repeat
         if self.t.token == '}' then
             break
         end
-        self:field()
-        if self.t.token == ',' or self.t.token == ';' then
-            self.out[#self.out+1] = ' '
-        end
+        self:field(op_ctor)
     until not (self:testnext(',') or self:testnext(';'))
     self:check_match('}', '{', line)
-    self.out[#self.out+1] = ')'
+    return op_ctor
 end
 
-function P:parlist (ismethod)
+function P:parlist (ast)
     -- parlist -> [ param { `,' param } ]
     -- param -> NAME | `...'
-    if ismethod then
-        self.out[#self.out+1] = 'self'
-    end
     if self.t.token ~= ')' then
-        if ismethod then
-            self.out[#self.out+1] = ' '
-        end
         repeat
             if self.t.token == '<name>' then
-                self.out[#self.out+1] = self.t.seminfo
+                ast:push(self.t.seminfo)
                 self:next()
             elseif self.t.token == '...' then
                 self:next()
-                self.out[#self.out+1] = '!vararg'
+                ast:push('!vararg')
                 break
             else
                 self:syntaxerror("<name> or '...' expected")
             end
-            if self.t.token == ',' then
-                self.out[#self.out+1] = ' '
-            end
         until not self:testnext(',')
     end
+    return ast
 end
 
 function P:body (ismethod, line)
     -- body ->  `(' parlist `)' block END
     self:checknext('(')
-    self.out[#self.out+1] = '(!lambda ('
-    self:parlist(ismethod)
+    local op_prm = self:parlist(op{ismethod and 'self' or nil})
     self:checknext(')')
-    self.out[#self.out+1] = ')'
-    self:statlist()
+    local op_lambda = self:block(op{'!lambda', op_prm})
     self:check_match('end', 'function', line)
-    self.out[#self.out+1] = ')'
+    return op_lambda
 end
 
-function P:explist ()
+function P:explist (ast)
     -- explist -> expr { `,' expr }
-    self:expr()
+    ast:push(self:expr())
     while self:testnext(',') do
-        self.out[#self.out+1] = ' '
-        self:expr()
+        ast:push(self:expr())
     end
+    return ast
 end
 
-function P:funcargs (line)
+function P:funcargs (ast, line)
     if     self.t.token == '(' then
         -- funcargs -> `(' [ explist ] `)'
         self:next()
         if self.t.token ~= ')' then
-            self:explist()
+            self:explist(ast)
         end
         self:check_match(')', '(', line)
     elseif self.t.token == '{' then
         -- funcargs -> constructor
-        self:constructor()
+        ast:push(self:constructor())
     elseif self.t.token == '<string>' then
         -- funcargs -> STRING
-        self.out[#self.out+1] = quote(self.t.seminfo)
+        ast:push(str(self.t.seminfo))
         self:next()
     else
         self:syntaxerror("function arguments expected")
@@ -772,10 +757,11 @@ function P:primaryexpr ()
     if     self.t.token == '(' then
         local line = self.linenumber
         self:next()
-        self:expr(true)
+        local op_expr = self:expr(true)
         self:check_match(')', '(', line)
+        return op_expr
     elseif self.t.token == '<name>' then
-        self.out[#self.out+1] = self:str_checkname()
+        return self:str_checkname()
     else
         self:syntaxerror("unexpected symbol")
     end
@@ -785,52 +771,25 @@ function P:suffixedexp (one)
     -- suffixedexp ->
     --    primaryexp { `.' NAME | `[' exp `]' | `:' NAME funcargs | funcargs }
     local line = self.linenumber
-    local sav = self.out
-    self.out = {}
-    self:primaryexpr()
-    local out = tconcat(self.out)
+    local op_expr = self:primaryexpr()
     while true do
-        self.out = {}
         if     self.t.token == '.' then
-            out = '(!index ' .. out .. ' ' .. self:fieldsel() .. ')'
+            op_expr = op{'!index', op_expr, self:fieldsel()}
         elseif self.t.token == '[' then
-            self.out[#self.out+1] = '(!index '
-            self.out[#self.out+1] = out
-            self.out[#self.out+1] = ' '
-            self:yindex()
-            self.out[#self.out+1] = ')'
-            out = tconcat(self.out)
+            op_expr = op{'!index', op_expr, self:yindex()}
         elseif self.t.token == ':' then
             self:next()
-            if one then
-                self.out[#self.out+1] = '(!callmeth1 '
-            else
-                self.out[#self.out+1] = '(!callmeth '
-            end
-            self.out[#self.out+1] = out
-            self.out[#self.out+1] = ' '
-            self.out[#self.out+1] = self:str_checkname()
-            self.out[#self.out+1] = ' '
-            self:funcargs(line)
-            self.out[#self.out+1] = ')'
-            out = tconcat(self.out)
+            local callmeth = one and '!callmeth1' or '!callmeth'
+            op_expr = op{callmeth, op_expr, self:str_checkname()}
+            self:funcargs(op_expr, line)
         elseif self.t.token == '('
             or self.t.token == '{'
             or self.t.token == '<string>' then
-            if one then
-                self.out[#self.out+1] = '(!call1 '
-            else
-                self.out[#self.out+1] = '(!call '
-            end
-            self.out[#self.out+1] = out
-            self.out[#self.out+1] = ' '
-            self:funcargs(line)
-            self.out[#self.out+1] = ')'
-            out = tconcat(self.out)
+            local call = one and '!call1' or '!call'
+            op_expr = op{call, op_expr}
+            self:funcargs(op_expr, line)
         else
-            self.out = sav
-            self.out[#self.out+1] = out
-            return
+            return op_expr
         end
     end
 end
@@ -838,60 +797,59 @@ end
 function P:simpleexpr (one)
     -- simpleexp -> NUMBER | STRING | NIL | TRUE | FALSE | ... |
     --             constructor | FUNCTION body | suffixedexp
+    local exp
     if     self.t.token == '<number>' then
-        self.out[#self.out+1] = self.t.seminfo
+        exp = self.t.seminfo
     elseif self.t.token == '<string>' then
-        self.out[#self.out+1] = quote(self.t.seminfo)
+        exp = str(self.t.seminfo)
     elseif self.t.token == 'nil' then
-        self.out[#self.out+1] = '!nil'
+        exp = '!nil'
     elseif self.t.token == 'true' then
-        self.out[#self.out+1] = '!true'
+        exp = '!true'
     elseif self.t.token == 'false' then
-        self.out[#self.out+1] = '!false'
+        exp = '!false'
     elseif self.t.token == '...' then
-        self.out[#self.out+1] = '!vararg'
+        exp = '!vararg'
     elseif self.t.token == '{' then
-        self:constructor()
-        return
+        return self:constructor()
     elseif self.t.token == 'function' then
         self:next()
-        self:body(false, self.linenumber)
-        return
+        return self:body(false, self.linenumber)
     else
-        self:suffixedexp(one)
-        return
+        return self:suffixedexp(one)
     end
     self:next()
+    return exp
 end
 
 local unop = {
-    ['not']   = '(!not ',
-    ['-']     = '(!neg ',
-    ['~']     = '(!bnot ',
-    ['#']     = '(!len ',
+    ['not']   = '!not',
+    ['-']     = '!neg',
+    ['~']     = '!call1 (!index tvm "bnot")',
+    ['#']     = '!len',
 }
 local binop = {
-    ['+']     = '(!add ',
-    ['-']     = '(!sub ',
-    ['*']     = '(!mul ',
-    ['%']     = '(!mod ',
-    ['^']     = '(!pow ',
-    ['/']     = '(!div ',
-    ['//']    = '(!idiv ',
-    ['&']     = '(!band ',
-    ['|']     = '(!bor ',
-    ['~']     = '(!bxor ',
-    ['<<']    = '(!shl ',
-    ['>>']    = '(!shr ',
-    ['..']    = '(!concat ',
-    ['~=']    = '(!ne ',
-    ['==']    = '(!eq ',
-    ['<']     = '(!lt ',
-    ['<=']    = '(!le ',
-    ['>']     = '(!gt ',
-    ['>=']    = '(!ge ',
-    ['and']   = '(!and ',
-    ['or']    = '(!or ',
+    ['+']     = '!add',
+    ['-']     = '!sub',
+    ['*']     = '!mul',
+    ['%']     = '!mod',
+    ['^']     = '!pow',
+    ['/']     = '!div',
+    ['//']    = '!idiv',
+    ['&']     = '!band',
+    ['|']     = '!bor',
+    ['~']     = '!bxor',
+    ['<<']    = '!shl',
+    ['>>']    = '!shr',
+    ['..']    = '!concat',
+    ['~=']    = '!ne',
+    ['==']    = '!eq',
+    ['<']     = '!lt',
+    ['<=']    = '!le',
+    ['>']     = '!gt',
+    ['>=']    = '!ge',
+    ['and']   = '!and',
+    ['or']    = '!or',
 }
 local priority = {
     --        { left right }
@@ -921,228 +879,167 @@ local priority = {
 function P:expr (one, limit)
     -- expr -> (simpleexp | unop expr) { binop expr }
     limit = limit or 0
-    local sav = self.out
-    self.out = {}
+    local op_expr
     local uop = unop[self.t.token]
     if uop then
         self:next()
-        self.out[#self.out+1] = uop
-        self:expr(false, 12)    -- UNARY_PRIORITY
-        self.out[#self.out+1] = ')'
+        op_expr = op{uop, self:expr(false, 12)} -- UNARY_PRIORITY
     else
-        self:simpleexpr(one)
+        op_expr = self:simpleexpr(one)
     end
-    local out = tconcat(self.out)
-    local op = binop[self.t.token]
+    local bop = binop[self.t.token]
     local prior = priority[self.t.token]
-    while op and prior[1] > limit do
+    while bop and prior[1] > limit do
         self:next()
-        self.out = { op, out, ' ' }
-        self:expr(false, prior[2])
-        self.out[#self.out+1] = ')'
-        out = tconcat(self.out)
-        op = binop[self.t.token]
+        op_expr = op{bop, op_expr, self:expr(false, prior[2])}
+        bop = binop[self.t.token]
         prior = priority[self.t.token]
     end
-    self.out = sav
-    self.out[#self.out+1] = out
+    return op_expr
 end
 
-function P:block ()
+function P:block (ast)
     -- block -> statlist
-    self:statlist()
-    self.out[#self.out+1] = ')'
+    self:statlist(ast)
+    return ast
 end
 
-function P:assignment ()
+function P:assignment (ast)
     if self:testnext(',') then
         -- assignment -> `,' suffixedexp assignment
-        self.out[#self.out+1] = ' '
-        self:suffixedexp()
-        self:assignment()
+        ast[2]:push(self:suffixedexp())
+        self:assignment(ast)
     else
         -- assignment -> `=' explist
         self:checknext('=')
-        self.out[#self.out+1] = ') ('
-        self:explist()
-        self.out[#self.out+1] = '))'
+        self:explist(ast[3])
     end
 end
 
-function P:breakstat ()
+function P:breakstat (ast)
     self:next()
-    self.out[#self.out+1] = '(!break)'
+    ast:push(op{'!break'})
 end
 
-function P:gotostat ()
+function P:gotostat (ast)
     self:next()
-    self.out[#self.out+1] = '(!goto '
-    self.out[#self.out+1] = self:str_checkname()
-    self.out[#self.out+1] = ')'
+    ast:push(op{'!goto', self:str_checkname()})
 end
 
-function P:labelstat ()
+function P:labelstat (ast)
     -- label -> '::' NAME '::'
-    self.out[#self.out+1] = '(!label '
-    self.out[#self.out+1] = self:str_checkname()
-    self.out[#self.out+1] = ')'
+    ast:push(op{'!label', self:str_checkname()})
     self:checknext('::')
 end
 
-function P:whilestat (line)
+function P:whilestat (ast, line)
     -- whilestat -> WHILE cond DO block END
     self:next()
-    self.out[#self.out+1] = '(!while '
-    self:expr(true)
-    self.out[#self.out+1] = '\n'
+    local cond = self:expr(true)
     self:checknext('do')
-    self:block()
+    local op_while = self:block(op{'!while', cond})
     self:check_match('end', 'while', line)
+    ast:push(op_while)
 end
 
-function P:repeatstat (line)
+function P:repeatstat (ast, line)
     -- repeatstat -> REPEAT block UNTIL cond
     self:next()
-    self.out[#self.out+1] = '(!repeat'
-    self:statlist()
+    local op_repeat = self:block(op{'!repeat'})
     self:check_match('until', 'repeat', line)
-    self.out[#self.out+1] = '\n'
-    self:expr(true)
-    self.out[#self.out+1] = ')'
+    op_repeat:push(self:expr(true))
+    ast:push(op_repeat)
 end
 
-function P:forbody (name)
+function P:forbody (ast)
     -- forbody -> DO block
-    self.out[#self.out+1] = '\n'
     self:checknext('do')
-    if name then
-        self.out[#self.out+1] = "(!define "
-        self.out[#self.out+1] = name
-        self.out[#self.out+1] = " "
-        self.out[#self.out+1] = name
-        self.out[#self.out+1] = ")"
-    end
-    self:block()
+    return self:block(ast)
 end
 
-function P:fornum (name)
+function P:fornum (ast, name)
     -- fornum -> NAME = exp1,exp1[,exp1] forbody
     self:checknext('=')
-    self.out[#self.out+1] = '(!loop '
-    self.out[#self.out+1] = name
-    self.out[#self.out+1] = ' '
-
-    self:expr(true)     -- initial value
+    local init = self:expr(true)
     self:checknext(',')
-    self.out[#self.out+1] = ' '
-    self:expr(true)     -- limit
-    if self:testnext(',') then
-        self.out[#self.out+1] = ' '
-        self:expr(true) -- optional step
-    else
-        self.out[#self.out+1] = ' 1'    -- default step = 1
-    end
-    self:forbody(name)
+    local limit = self:expr(true)
+    local step = self:testnext(',') and self:expr(true) or 1
+    ast:push(self:forbody(op{'!loop', name, init, limit, step, op{'!define', name, name}}))
 end
 
-function P:forlist (name)
+function P:forlist (ast, name)
     -- forlist -> NAME {,NAME} IN explist forbody
-    self.out[#self.out+1] = '(!for ('
-    self.out[#self.out+1] = name
+    local op_var = op{name}
     while self:testnext(',') do
-        self.out[#self.out+1] = ' '
-        self.out[#self.out+1] = self:str_checkname()
+        op_var:push(self:str_checkname())
     end
-    self.out[#self.out+1] = ') ('
     self:checknext('in')
-    self:explist()
-    self.out[#self.out+1] = ')'
-    self:forbody()
+    ast:push(self:forbody(op{'!for', op_var, self:explist(op{})}))
 end
 
-function P:forstat (line)
+function P:forstat (ast, line)
     -- forstat -> FOR (fornum | forlist) END
     self:next()
     local name = self:str_checkname()
     if     self.t.token == '=' then
-        self:fornum(name)
+        self:fornum(ast, name)
     elseif self.t.token == ','
         or self.t.token == 'in' then
-        self:forlist(name)
+        self:forlist(ast, name)
     else
         self:syntaxerror("'=' or 'in' expected")
     end
     self:check_match('end', 'for', line)
 end
 
-function P:test_then_block ()
+function P:test_then_block (ast)
     -- test_then_block -> [IF | ELSEIF] cond THEN block
     self:next()
-    self.out[#self.out+1] = '(!if '
-    self:expr(true)
-    self.out[#self.out+1] = '\n'
+    local op_if = op{'!if', self:expr(true)}
     self:checknext('then')
-    self.out[#self.out+1] = '(!do'
-    self:block()
+    op_if:push(self:block(op{'!do'}))
+    ast:push(op_if)
+    return op_if
 end
 
-function P:ifstat (line)
+function P:ifstat (ast, line)
     -- ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block] END
-    self:test_then_block()
-    local n = 1
+    local op_if = self:test_then_block(ast)
     while self.t.token == 'elseif' do
-        self:test_then_block()
-        n = n + 1
+        op_if = self:test_then_block(op_if)
     end
     if self:testnext('else') then
-        self.out[#self.out+1] = '(!do'
-        self:block()
+        op_if:push(self:block(op{'!do'}))
     end
     self:check_match('end', 'if', line)
-    for _ = 1, n, 1 do
-        self.out[#self.out+1] = ')'
-    end
 end
 
-function P:localfunc (line)
+function P:localfunc (ast, line)
     local name = self:str_checkname()
-    self.out[#self.out+1] = '(!define '
-    self.out[#self.out+1] = name
-    self.out[#self.out+1] = ')(!assign '
-    self.out[#self.out+1] = name
-    self:body(false, line)
-    self.out[#self.out+1] = ')\n'
+    ast:push(op{'!define', name})
+    ast:push(op{'!assign', name, self:body(false, line)})
 end
 
-function P:localstat ()
+function P:localstat (ast)
     -- stat -> LOCAL NAME {`,' NAME} [`=' explist]
-    self.out[#self.out+1] = '(!mdefine ('
-    local multi = false
+    local op_var = op{}
     repeat
-        local name = self:str_checkname()
-        self.out[#self.out+1] = name
-        if self.t.token == ',' then
-            multi = true
-            self.out[#self.out+1] = ' '
-        end
+        op_var:push(self:str_checkname())
     until not self:testnext(',')
-    if multi then
-        self.out[#self.out+1] = ')'
-    else
-        self.out[#self.out-1] = '(!define '
-    end
     if self:testnext('=') then
-        if multi then
-            self.out[#self.out+1] = '('
+        local op_exp = self:explist(op{})
+        if #op_var == 1 and #op_exp == 1 then
+            ast:push(op{'!define', op_var[1], op_exp[1]})
         else
-            self.out[#self.out+1] = ' '
+            ast:push(op{'!mdefine', op_var, op_exp})
         end
-        self:explist()
-        if multi then
-            self.out[#self.out+1] = ')'
+    else
+        if #op_var == 1 then
+            ast:push(op{'!define', op_var[1]})
+        else
+            ast:push(op{'!mdefine', op_var})
         end
     end
-    self.out[#self.out+1] = ')'
 end
 
 function P:funcname ()
@@ -1150,127 +1047,125 @@ function P:funcname ()
     local ismethod = false
     local name = self:str_checkname()
     while self.t.token == '.' do
-        name = '(!index ' .. name .. ' ' .. self:fieldsel() .. ')'
+        name = op{'!index', name, self:fieldsel()}
     end
     if self.t.token == ':' then
         ismethod = true
-        name = '(!index ' .. name .. ' ' .. self:fieldsel() .. ')'
+        name = op{'!index', name, self:fieldsel()}
     end
-    self.out[#self.out+1] = name
-    return ismethod
+    return name, ismethod
 end
 
-function P:funcstat (line)
+function P:funcstat (ast, line)
     -- funcstat -> FUNCTION funcname body
     self:next()
-    self.out[#self.out+1] = '(!assign '
-    local ismethod = self:funcname()
-    self:body(ismethod, line)
-    self.out[#self.out+1] = ')\n'
+    local name, ismethod = self:funcname()
+    ast:push(op{'!assign', name, self:body(ismethod, line)})
 end
 
-function P:exprstat ()
+function P:exprstat (ast)
     -- stat -> func | assignment
-    local sav = self.out
-    self.out = {}
-    self:suffixedexp()
-    local out = tconcat(self.out)
-    self.out = sav
+    local op_exp = self:suffixedexp()
     if self.t.token == '=' or self.t.token == ',' then
-        self.out[#self.out+1] = '(!massign ('
-        self.out[#self.out+1] = out
-        self:assignment()
+        local op_asg = op{'!massign', op{op_exp}, op{}}
+        self:assignment(op_asg)
+        if #op_asg[2] == 1 and #op_asg[3] == 1 then
+            op_asg[1] = '!assign'
+            op_asg[2] = op_asg[2][1]
+            op_asg[3] = op_asg[3][1]
+        end
+        ast:push(op_asg)
     else
-        self.out[#self.out+1] = out
+        ast:push(op_exp)
     end
 end
 
-function P:retstat ()
+function P:retstat (ast)
     -- stat -> RETURN [explist] [';']
-    self.out[#self.out+1] = '(!return '
+    local op_return = op{'!return'}
     if not self:block_follow(true) and self.t.token ~= ';' then
-        self:explist()
+        self:explist(op_return)
     end
-    self.out[#self.out+1] = ')'
+    ast:push(op_return)
     self:testnext(';')
 end
 
-function P:statement ()
+function P:statement (ast)
     local line = self.linenumber
-    self.out[#self.out+1] = '(!line '
-    self.out[#self.out+1] = line
-    self.out[#self.out+1] = ')'
+    ast:push(op{'!line', line})
     if     self.t.token == ';' then
         -- stat -> ';' (empty statement)
         self:next()
     elseif self.t.token == 'if' then
         -- stat -> ifstat
-        self:ifstat(line)
+        self:ifstat(ast, line)
     elseif self.t.token == 'while' then
         -- stat -> whilestat
-        self:whilestat(line)
+        self:whilestat(ast, line)
     elseif self.t.token == 'do' then
         -- stat -> DO block END
         self:next()
-        self.out[#self.out+1] = '(!do'
-        self:block()
+        ast:push(self:block(op{'!do'}))
         self:check_match('end', 'do', line)
     elseif self.t.token == 'for' then
         -- stat -> forstat
-        self:forstat(line)
+        self:forstat(ast, line)
     elseif self.t.token == 'repeat' then
         -- stat -> repeatstat
-        self:repeatstat(line)
+        self:repeatstat(ast, line)
     elseif self.t.token == 'function' then
         -- stat -> funcstat
-        self:funcstat(line)
+        self:funcstat(ast, line)
     elseif self.t.token == 'local' then
         -- stat -> localstat
         self:next()
         if self:testnext('function') then
-            self:localfunc(line)
+            self:localfunc(ast, line)
         else
-            self:localstat()
+            self:localstat(ast)
         end
     elseif self.t.token == '::' then
         -- stat -> label
         self:next()
-        self:labelstat()
+        self:labelstat(ast)
     elseif self.t.token == 'return' then
         -- stat -> retstat
         self:next()
-        self:retstat()
+        self:retstat(ast)
     elseif self.t.token == 'break' then
         -- stat -> breakstat
-        self:breakstat()
+        self:breakstat(ast)
     elseif self.t.token == 'goto' then
         -- stat -> 'goto' NAME
-        self:gotostat()
+        self:gotostat(ast)
     else
         -- stat -> func | assignment
-        self:exprstat()
+        self:exprstat(ast)
     end
 end
 
-function P:mainfunc ()
+function P:mainfunc (ast)
     self:next()
-    self:statlist()
+    self:statlist(ast)
     self:check('<eof>')
 end
 
 end -- module P
 
-local function translate (s, fname)
+local function parse (s, fname)
     local p = setmetatable({}, { __index=P })
     p:setinput(s, fname)
     if p.current == '\x1B' then
         return s
     end
     p:shebang()
-    p.out = { '(!line ', quote(fname), ' ', p.linenumber, ')' }
-    p:mainfunc()
-    p.out[#p.out+1] = "\n; end of generation"
-    return tconcat(p.out)
+    local ast = ops{op{'!line', str(fname), p.linenumber}}
+    p:mainfunc(ast)
+    return ast
+end
+
+local function translate (s, fname)
+    return tostring(parse(s, fname))
 end
 
 _G._COMPILER = translate
@@ -1284,7 +1179,8 @@ if not debug.getinfo(3) and fname then
     end
     local s = f:read'*a'
     f:close()
-    local code = translate(s, '@' .. fname)
+    local ast = parse(s, '@' .. fname)
     print "; bootstrap"
-    print(code)
+    print(ast)
+    print "\n; end of generation"
 end
