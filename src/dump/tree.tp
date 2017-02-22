@@ -1,7 +1,7 @@
 
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 
 (!let error error)
@@ -37,7 +37,7 @@
                 (!if (!index seen tbl)
                      (!call error "cycle detected"))
                 (!assign (!index seen tbl) !true)
-                (!define (is_map n max) (!false 0 1))
+                (!mdefine (is_map n max) (!false 0 1))
                 (!for (k) ((!call pairs tbl))
                         (!if (!and (!eq (!call1 type k) "number") (!ge k 1))
                              (!if (!gt k max)

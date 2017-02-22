@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2015 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -97,7 +97,7 @@
 (!let d 5)(!let m 11)(!let y 1990)
 (!call is (!call format "%02d/%02d/%04d" d m y) "05/11/1990")
 (!call is (!call format "%X %x" 126 126) "7E 7e")
-(!let (tag title)("h1" "a title"))
+(!mlet (tag title)("h1" "a title"))
 (!call is (!call format "<%s>%s</%s>" tag title tag) "<h1>a title</h1>")
 
 (!call is (!call format "%q" "a string with \"quotes\" and \n new line") "\"a string with \\\"quotes\\\" and \\\n new line\"" "function format %q")

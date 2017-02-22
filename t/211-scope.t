@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -38,7 +38,7 @@
 (!call is x 10)
 
 ; scope
-(!define (a b) (1 10))
+(!mdefine (a b) (1 10))
 (!if (!lt a b)
      (!do (!call is a 1 "scope")
           (!define a)

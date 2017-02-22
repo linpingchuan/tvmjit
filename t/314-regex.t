@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -26,7 +26,7 @@
 ))
 
 (!let split (!lambda (line)
-                (!define (pattern target result desc) ("" "" "" ""))
+                (!mdefine (pattern target result desc) ("" "" "" ""))
                 (!define idx 1)
                 (!define c (!callmeth line sub idx idx))
                 (!while (!and (!ne c "") (!ne c "\t"))  ; pattern
@@ -91,14 +91,14 @@
 (!let dirname (!callmeth (!index arg 0) sub 1 (!sub (!callmeth (!index arg 0) find "314") 1)))
 (!loop i 1 (!len test_files) 1
         (!let filename (!index test_files i))
-        (!let (f msg) ((!call (!index io "open") (!concat dirname filename) "r")))
+        (!mlet (f msg) ((!call (!index io "open") (!concat dirname filename) "r")))
         (!if (!eq f !nil)
              (!do (!call diag msg)
                   (!break)))
         (!for (line) ((!callmeth f lines))
                 (!if (!eq (!callmeth line len) 0)
                      (!break))
-                (!let (pattern target result desc) ((!call split line)))
+                (!mlet (pattern target result desc) ((!call split line)))
                 (!assign test_number (!add test_number 1))
                 (!if (!index todo_info test_number)
                      (!call todo (!index todo_info test_number)))
@@ -107,7 +107,7 @@
                     (!if (!eq (!len t) 0)
                          (!return \"nil\")
                          (!return (!call (!index table \"concat\") t \"\\t\")))"))
-                (!let (compiled msg) ((!call load code)))
+                (!mlet (compiled msg) ((!call load code)))
                 (!if (!not compiled)
                      (!call error (!mconcat "can't compile : " code "\n" msg)))
                 (!if (!eq (!callmeth result sub 1 1) "/")

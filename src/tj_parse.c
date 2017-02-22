@@ -1,6 +1,6 @@
 /*
 ** tVM parser (source code -> bytecode).
-** Copyright (C) 2013-2015 Francois Perrad.
+** Copyright (C) 2013-2017 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
 ** Copyright (C) 2005-2016 Mike Pall.
@@ -43,7 +43,7 @@
   _(and) _(or) \
   _(assign) _(break) _(call) _(call1) _(callmeth) _(callmeth1) _(cond) _(define) _(do) \
   _(for) _(goto) _(if) _(index) _(label) _(lambda) _(let) _(letrec) _(line) \
-  _(loop) _(massign) _(mconcat) _(repeat) _(return) _(while)
+  _(loop) _(massign) _(mconcat) _(mdefine) _(mlet) _(repeat) _(return) _(while)
 
 
 enum {
@@ -2295,44 +2295,51 @@ static void parse_callmeth(LexState *ls, ExpDesc *v)
   bcemit_call(fs, v, &args);
 }
 
-/* Parse 'let' statement. */
-static void parse_let (LexState *ls, int final)
+/* Parse 'mlet' statement. */
+static void parse_mlet (LexState *ls, int final)
 {
   size_t nvars, nexps;
   ExpDesc e;
-  if (!lex_opt(ls, '(')) {
+  lex_check(ls, '(');
+  nvars = 0;
+  while (!lex_opt(ls, ')')) {
     GCstr *varname = lex_str(ls);
-    var_new(ls, 0, varname, final);
-    nvars = 1;
-    if (lex_opt(ls, ')')) {
-      nexps = 0;
-    } else {
-      expr(ls, &e);
-      nexps = 1;
-      lex_check(ls, ')');
-    }
-  } else {
-    nvars = 0;
-    while (!lex_opt(ls, ')')) {
-      GCstr *varname = lex_str(ls);
-      var_new(ls, nvars, varname, final);
-      nvars++;
-    }
-    if (lex_opt(ls, ')')) {
-      nexps = 0;
-    } else {
-      lex_check(ls, '(');
-      nexps = expr_list(ls, &e);
-      lex_check(ls, ')');
-    }
+    var_new(ls, nvars, varname, final);
+    nvars++;
   }
-  if (nexps == 0) {
+  if (lex_opt(ls, ')')) {
+    nexps = 0;
     if (final)
       err_syntax(ls, LJ_ERR_XEXPR);
     e.k = VVOID;
+  } else {
+    lex_check(ls, '(');
+    nexps = expr_list(ls, &e);
+    lex_check(ls, ')');
   }
   assign_adjust(ls, nvars, nexps, &e);
   var_add(ls, nvars);
+}
+
+/* Parse 'let' statement. */
+static void parse_let (LexState *ls, int final)
+{
+  size_t nexps;
+  ExpDesc e;
+  GCstr *varname = lex_str(ls);
+  var_new(ls, 0, varname, final);
+  if (lex_opt(ls, ')')) {
+    nexps = 0;
+    if (final)
+      err_syntax(ls, LJ_ERR_XEXPR);
+    e.k = VVOID;
+  } else {
+    expr(ls, &e);
+    nexps = 1;
+    lex_check(ls, ')');
+  }
+  assign_adjust(ls, 1, nexps, &e);
+  var_add(ls, 1);
 }
 
 /* Parse 'letrec' statement. */
@@ -2757,6 +2764,12 @@ gen_setoneret:
 	  break;
 	case SP_mconcat:
 	  parse_mconcat(ls, v);
+	  break;
+	case SP_mdefine:
+	  parse_mlet(ls, 0);
+	  break;
+	case SP_mlet:
+	  parse_mlet(ls, 1);
 	  break;
 	case SP_repeat:
 	  parse_repeat(ls);

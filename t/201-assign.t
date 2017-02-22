@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -67,7 +67,7 @@
 (!call is my_i 2)
 
 (!define i 1)
-(!define (j) (1))
+(!mdefine (j) (1))
 (!call is i 1 "local variable")
 (!call is j 1)
 (!assign j 2)
@@ -85,7 +85,7 @@
 (!call is b 4)
 
 (!define n1 1)
-(!define (n2 n3 n4) (2 3 4))
+(!mdefine (n2 n3 n4) (2 3 4))
 (!massign (n1 n2 n3 n4) (n4 n3 n2 n1))
 (!call is n1 4 "assignment list swap values")
 (!call is n2 3)

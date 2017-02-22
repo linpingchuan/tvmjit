@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2014 Francois Perrad
@@ -94,7 +94,7 @@
                       ": bad argument #2 to 'len' (initial position out of string)"
                       "function len (out of range))")
 
-(!let (len pos) ((!call len "invalid\xFF")))
+(!mlet (len pos) ((!call len "invalid\xFF")))
 (!call is len !nil "function len (invalid)")
 (!call is pos 8)
 

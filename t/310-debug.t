@@ -62,7 +62,7 @@
                       "bad argument #2 to 'getinfo' (invalid option)"
                       "function getinfo with bad option")
 
-(!define (name value) ((!call getlocal 0 1)))
+(!mdefine (name value) ((!call getlocal 0 1)))
 (!call type_ok name "string" "function getlocal (level)")
 (!call is value 0)
 
@@ -70,7 +70,7 @@
                       "bad argument #1 to 'getlocal' (level out of range)"
                       "function getlocal (out of range)")
 
-(!define (name value) ((!call getlocal contains 1)))
+(!mdefine (name value) ((!call getlocal contains 1)))
 (!call type_ok name "string" "function getlocal (func)")
 (!call is value !nil)
 
@@ -98,13 +98,13 @@
 (!call type_ok name "string" "function getupvalue")
 
 (!call sethook)
-(!define (hook mask count) ((!call gethook)))
+(!mdefine (hook mask count) ((!call gethook)))
 (!call is hook !nil "function gethook")
 (!call is mask "")
 (!call is count 0)
 (!define f (!lambda ()))
 (!call sethook f "c" 42)
-(!define (hook mask count) ((!call gethook)))
+(!mdefine (hook mask count) ((!call gethook)))
 (!call is hook f "function gethook")
 (!call is mask "c")
 (!call is count 42)

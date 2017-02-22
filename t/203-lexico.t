@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -51,31 +51,31 @@
 
 (!call is (!len "A\x00B") 3)
 
-(!define (f msg) ((!call load "(!let a \"A\\xyz\")")))
+(!mdefine (f msg) ((!call load "(!let a \"A\\xyz\")")))
 (!call contains msg ": invalid escape sequence near '\"A'")
 
-(!define (f msg) ((!call load "(!let a \"A\\uvwyz\")")))
+(!mdefine (f msg) ((!call load "(!let a \"A\\uvwyz\")")))
 (!call contains msg ": invalid escape sequence near '\"A'")
 
-(!define (f msg) ((!call load "(!let a \"A\\UVWYZ0000\")")))
+(!mdefine (f msg) ((!call load "(!let a \"A\\UVWYZ0000\")")))
 (!call contains msg ": invalid escape sequence near '\"A'")
 
-(!define (f msg) ((!call load "(!let a \"A\\0\")")))
+(!mdefine (f msg) ((!call load "(!let a \"A\\0\")")))
 (!call contains msg ": invalid escape sequence near '\"A'")
 
-(!define (f msg) ((!call load "(!let a = \"A\\Z\")")))
+(!mdefine (f msg) ((!call load "(!let a = \"A\\Z\")")))
 (!call contains msg ": invalid escape sequence near '\"A'")
 
-(!define (f msg) ((!call load "(!let a \" unfinished string")))
+(!mdefine (f msg) ((!call load "(!let a \" unfinished string")))
 (!call contains msg ": unfinished string near")
 
-(!define (f msg) ((!call load "(!let a \" unfinished string\n")))
+(!mdefine (f msg) ((!call load "(!let a \" unfinished string\n")))
 (!call contains msg ": unfinished string near")
 
-(!define (f msg) ((!call load "(!let a \" unfinished string\\\n")))
+(!mdefine (f msg) ((!call load "(!let a \" unfinished string\\\n")))
 (!call contains msg ": invalid escape sequence near '\"")
 
-(!define (f msg) ((!call load "(!let a \" unfinished string\\")))
+(!mdefine (f msg) ((!call load "(!let a \" unfinished string\\")))
 (!call contains msg ": unfinished string near")
 
 (!call is 3.0 3)
@@ -88,7 +88,7 @@
 (!call is 0X1.921FB54442D18P+1 (!mul (!add 1 (!div 0x921FB54442D18 0x10000000000000)) 2))
 
 
-(!define (f msg) ((!call load "(!let a 12e34e56)")))
+(!mdefine (f msg) ((!call load "(!let a 12e34e56)")))
 (!call contains msg ": malformed number near")
 
 (!define iden\:t\(fier\))

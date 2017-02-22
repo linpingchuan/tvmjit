@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -96,7 +96,7 @@
 (!let permutations (!lambda (a)
                 (!let co (!call (!index coroutine "create") (!lambda () (!call permgen a))))
                 (!return (!lambda ()    ; iterator
-                                (!let (code res) ((!call (!index coroutine "resume") co)))
+                                (!mlet (code res) ((!call (!index coroutine "resume") co)))
                                 (!return res)))))
 
 (!define output ())
@@ -128,7 +128,7 @@
 
 ;   fibo
 (!let fibogen (!lambda ()
-                (!define (x y) (0 1))
+                (!mdefine (x y) (0 1))
                 (!while !true
                         (!call (!index coroutine "yield") x)
                         (!massign (x y) (y (!add x y))))))

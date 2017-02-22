@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -36,7 +36,7 @@
                 (!assign (!index output (!add (!len output) 1)) (!mconcat "co-body " a " " b))
                 (!define r (!call foo1 (!add a 1)))
                 (!assign (!index output (!add (!len output) 1)) (!concat "co-body " r))
-                (!define (r s) ((!call (!index coroutine "yield") (!add a b) (!sub a b))))
+                (!mdefine (r s) ((!call (!index coroutine "yield") (!add a b) (!sub a b))))
                 (!assign (!index output (!add (!len output) 1)) (!mconcat "co-body " r " " s))
                 (!return b "end"))))
 
@@ -79,7 +79,7 @@
                         (!call (!index coroutine "yield"))))))
 
 (!call (!index coroutine "resume") co)
-(!define (thr ismain) ((!call (!index coroutine "running") co)))
+(!mdefine (thr ismain) ((!call (!index coroutine "running") co)))
 (!call type_ok thr "thread" "running")
 (!call is ismain !true "running")
 (!call is (!call (!index coroutine "status") co) "suspended" "basics")
@@ -152,7 +152,7 @@
 ;
 (!define co (!call (!index coroutine "create") (!lambda ()
                 (!call error "in coro"))))
-(!define (r msg) ((!call (!index coroutine "resume") co)))
+(!mdefine (r msg) ((!call (!index coroutine "resume") co)))
 (!call is r !false)
 (!call contains msg ": in coro")
 

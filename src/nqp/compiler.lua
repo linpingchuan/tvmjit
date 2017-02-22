@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 do -- mop
@@ -551,7 +551,7 @@ local function signature (op, params)
                     end
                 end
                 if #pargs._VALUES ~= 0 then
-                    op:push(top:new{ '!define', pargs, top:new{ top:new{ '!call', 'unpack', '_'} } })
+                    op:push(top:new{ '!mdefine', pargs, top:new{ top:new{ '!call', 'unpack', '_'} } })
                 end
                 op:push(nargs)
                 op:push(lex)
@@ -2044,7 +2044,7 @@ local prelude = [[
 (!do
 (!do
         (!let _add_method (!lambda (a)
-                (!define (meta name func) ((!call unpack a)))
+                (!mdefine (meta name func) ((!call unpack a)))
                 (!assign name (!or (!and (!eq (!call1 type name) "table") (!index name "_VALUES")) name))
                 (!call checktype "add_method" 2 name "string")
                 (!call checktype "add_method" 3 func "function")
@@ -2054,7 +2054,7 @@ local prelude = [[
                 (!assign (!index methods name) func)
                 (!assign (!index (!index (!index meta "_VALUES") "proto") name) func)))
         (!let _new (!lambda (meta a)
-                (!define (name new) ((!call unpack a)))
+                (!mdefine (name new) ((!call unpack a)))
                 (!assign name (!or (!and (!eq (!call1 type name) "table") (!index name "_VALUES")) name))
                 (!call checktype "new" 2 name "string")
                 (!let mt ("__tostring": (!lambda (o) (!return (!callmeth o str)))))
@@ -2081,7 +2081,7 @@ local prelude = [[
 (!call (!index p6class "add_method") (p6class "str" (!lambda (meta)
                 (!return (!index (!index meta "_VALUES") "name")))))
 (!call (!index p6class "add_method") (p6class "add_attribute" (!lambda (a)
-                (!define (meta attr) ((!call unpack a)))
+                (!mdefine (meta attr) ((!call unpack a)))
                 (!assign attr (!or (!index attr "_VALUES") attr))
                 (!let name (!index attr "name"))
                 (!call checktype "add_attribute" "name" name "string")
@@ -2111,7 +2111,7 @@ local prelude = [[
 (!call (!index p6class "add_method") (p6class "HOW" (!lambda (meta)
                 (!return (!index (!index p6class "_VALUES") "proto")))))
 (!call (!index p6class "add_method") (p6class "add_role" (!lambda (a)
-                (!define (meta role) ((!call unpack a)))
+                (!mdefine (meta role) ((!call unpack a)))
                 (!let roles (!index (!index meta "_VALUES") "roles"))
                 (!let n (!index roles "n"))
                 (!loop i 0 (!sub n 1) 1
@@ -2124,7 +2124,7 @@ local prelude = [[
                 (!for (_ v) ((!call pairs (!index (!index role "_VALUES") "attributes")))
                         (!call (!index p6class "add_attribute") (meta v))))))
 (!call (!index p6class "add_method") (p6class "add_parent" (!lambda (a)
-                (!define (meta parent) ((!call unpack a)))
+                (!mdefine (meta parent) ((!call unpack a)))
                 (!if (!eq meta parent)
                      (!call error (!mconcat "Class '" (!callmeth1 meta name) "' cannot inherit from itself.")))
                 (!let parents (!index (!index meta "_VALUES") "parents"))
@@ -2151,10 +2151,10 @@ local prelude = [[
                                         (!return v)) )))))
 (!assign (!index _P6PKG "NQP::Metamodel::ClassHOW") p6class)
 (!call (!index p6class "add_method") (p6class "can" (!lambda (a)
-                (!define (meta name) ((!call unpack a)))
+                (!mdefine (meta name) ((!call unpack a)))
                 (!return (!ne (!index (!index (!index meta "_VALUES") "proto") name) !nil)))))
 (!call (!index p6class "add_method") (p6class "isa" (!lambda (a)
-                (!define (meta parent) ((!call unpack a)))
+                (!mdefine (meta parent) ((!call unpack a)))
                 (!letrec walk (!lambda (types)
                                 (!loop i 0 (!sub (!index types "n") 1) 1
                                         (!let v (!index types i))
@@ -2166,7 +2166,7 @@ local prelude = [[
                                 (!return !false)))
                 (!return (!call walk (!index (!index meta "_VALUES") "ISA"))))))
 (!call (!index p6class "add_method") (p6class "does" (!lambda (a)
-                (!define (meta role) ((!call unpack a)))
+                (!mdefine (meta role) ((!call unpack a)))
                 (!let roles (!index (!index meta "_VALUES") "roles"))
                 (!loop i 0 (!sub (!index roles "n") 1) 1
                         (!if (!eq (!index roles i) role)
@@ -2192,7 +2192,7 @@ local prelude = [[
 (!call (!index p6class "add_method") (p6role "HOW" (!lambda (meta)
                 (!return (!index (!index p6role "_VALUES") "proto")))))
 (!call (!index p6class "add_method") (p6role "add_method" (!lambda (a)
-                (!define (meta name func) ((!call unpack a)))
+                (!mdefine (meta name func) ((!call unpack a)))
                 (!call checktype "add_method" 2 name "string")
                 (!call checktype "add_method" 3 func "function")
                 (!let methods (!index (!index meta "_VALUES") "methods"))
@@ -2200,7 +2200,7 @@ local prelude = [[
                      (!call error (!concat "This role already has a method named " name)))
                 (!assign (!index methods name) func))))
 (!call (!index p6class "add_method") (p6role "add_attribute" (!lambda (a)
-                (!define (meta attr) ((!call unpack a)))
+                (!mdefine (meta attr) ((!call unpack a)))
                 (!assign attr (!or (!index attr "_VALUES") attr))
                 (!let name (!index attr "name"))
                 (!call checktype "add_attribute" "name" name "string")
@@ -2571,7 +2571,7 @@ local prelude = [[
                 (!let s (!callmeth1 self str))
                 (!return (!concat (!call1 upper (!call1 sub s 1 1)) (!call1 sub s 2))))))
 (!call (!index p6class "add_method") (p6cool "index" (!lambda (self a)
-                (!define (substring pos) ((!call unpack a)))
+                (!mdefine (substring pos) ((!call unpack a)))
                 (!assign substring (!or (!and (!eq (!call1 type substring) "table") (!index substring "_VALUES")) substring))
                 (!assign pos (!or (!or (!and (!eq (!call1 type pos) "table") (!index pos "_VALUES")) pos) 0))
                 (!call checktype "index" 1 substring "string")
@@ -2579,7 +2579,7 @@ local prelude = [[
                 (!let r (!call1 find (!callmeth1 self str) substring (!add pos 1) !true))
                 (!return (!or (!and r (!sub r 1)) -1)))))
 (!call (!index p6class "add_method") (p6cool "substr" (!lambda (self a)
-                (!define (start length) ((!call unpack a)))
+                (!mdefine (start length) ((!call unpack a)))
                 (!assign start (!or (!and (!eq (!call1 type start) "table") (!index start "_VALUES")) start))
                 (!assign length (!or (!and (!eq (!call1 type length) "table") (!index length "_VALUES")) length))
                 (!call checktype "substr" 1 start "number")
@@ -2858,7 +2858,7 @@ local prelude = [[
                 (!call (!index main "&say") ("1.." nb))))
 (!define curr_test 0)
 (!assign (!index main "&ok") (!lambda (a)
-                (!define (test desc) ((!call unpack a)))
+                (!mdefine (test desc) ((!call unpack a)))
                 (!assign test (!callmeth1 test bool))
                 (!if (!not test)
                      (!call (!index main "&print") ("not ")))

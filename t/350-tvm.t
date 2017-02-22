@@ -102,7 +102,7 @@
 (!let reader (!lambda ()
                 (!assign i (!add i 1))
                 (!return (!index t i))))
-(!define (f msg) ((!call load reader)))
+(!mdefine (f msg) ((!call load reader)))
 (!if msg
      (!call diag msg))
 (!call type_ok f "function" "function load(reader)")
@@ -119,7 +119,7 @@
 (!let reader (!lambda ()
                 (!assign i (!add i 1))
                 (!return (!index t i))))
-(!define (f msg) ((!call load reader)))
+(!mdefine (f msg) ((!call load reader)))
 (!if msg (!call diag msg))
 (!call type_ok f "function" "function load(pathological reader)")
 (!call f)
@@ -127,14 +127,14 @@
 
 (!assign t ("?syntax error?"))
 (!assign i 0)
-(!define (f msg) ((!call load reader "errorchunk")))
+(!mdefine (f msg) ((!call load reader "errorchunk")))
 (!call is f !nil "function load(syntax error)")
 (!call contains msg "[string \"errorchunk\"]:")
 
 (!define f (!call load (!lambda () (!return !nil))))
 (!call type_ok f "function" "when reader returns nothing")
 
-(!define (f msg) ((!call load (!lambda () (!return ())))))
+(!mdefine (f msg) ((!call load (!lambda () (!return ())))))
 (!call is f !nil "reader function must return a string")
 (!call contains msg "reader function must return a string")
 
@@ -150,15 +150,15 @@
 (!call f)
 (!call is (!call (!index env "bar") "ok") "ok")
 
-(!define (f msg) ((!call load "?syntax error?" "errorchunk")))
+(!mdefine (f msg) ((!call load "?syntax error?" "errorchunk")))
 (!call is f !nil "function load(syntax error)")
 (!call contains msg "[string \"errorchunk\"]:")
 
-(!define (f msg) ((!call load "(!call print \"ok\")" "chunk txt" "b")))
+(!mdefine (f msg) ((!call load "(!call print \"ok\")" "chunk txt" "b")))
 (!call contains  msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
-(!define (f msg) ((!call load "\x1bLua" "chunk bin" "t")))
+(!mdefine (f msg) ((!call load "\x1bLua" "chunk bin" "t")))
 (!call contains  msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
@@ -170,7 +170,7 @@
 (!call f)
 (!call is (!call foo "ok") "ok")
 
-(!define (f msg) ((!call loadfile "foo.tp" "b")))
+(!mdefine (f msg) ((!call loadfile "foo.tp" "b")))
 (!call contains msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
@@ -182,14 +182,14 @@
 
 (!call unlink "foo.tp") ; clean up
 
-(!define (f msg) ((!call loadfile "no_file.tp")))
+(!mdefine (f msg) ((!call loadfile "no_file.tp")))
 (!call is f !nil "function loadfile (no file)")
 (!call is msg "cannot open no_file.tp: No such file or directory")
 
 (!define f (!call open "foo.tp" "w"))
 (!callmeth f write "?syntax error?")
 (!callmeth f close)
-(!define (f msg) ((!call loadfile "foo.tp")))
+(!mdefine (f msg) ((!call loadfile "foo.tp")))
 (!call is f !nil "function loadfile (syntax error)")
 (!call contains msg "foo.tp:")
 (!call unlink "foo.tp") ; clean up

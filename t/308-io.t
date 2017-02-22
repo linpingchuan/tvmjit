@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -39,14 +39,14 @@
 
 (!call like (!index io "stderr") "^file %(0?[Xx]?%x+%)$" "variable stderr")
 
-(!let (r msg) ((!call close (!index io "stderr"))))
+(!mlet (r msg) ((!call close (!index io "stderr"))))
 (!call is r !nil "close (std)")
 (!call is msg "cannot close standard file")
 
 (!call is (!call flush) !true "function flush")
 
 (!call unlink "file.no")
-(!define (f msg) ((!call open "file.no")))
+(!mdefine (f msg) ((!call open "file.no")))
 (!call is f !nil "function open")
 (!call is msg "file.no: No such file or directory")
 
@@ -122,7 +122,7 @@
 (!call write)                   ; not tested
 (!call write "# text" 12 "\n")  ; not tested :  # text12
 
-(!let (r msg) ((!callmeth (!index io "stderr") close)))
+(!mlet (r msg) ((!callmeth (!index io "stderr") close)))
 (!call is r !nil "method close (std)")
 (!call is msg "cannot close standard file")
 

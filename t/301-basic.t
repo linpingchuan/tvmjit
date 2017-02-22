@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -36,10 +36,10 @@
 
 (!call contains _VERSION "Lua 5.1" "variable _VERSION")
 
-(!define (v msg) ((!call assert "text" "assert string")))
+(!mdefine (v msg) ((!call assert "text" "assert string")))
 (!call is v "text" "function assert")
 (!call is msg "assert string")
-(!define (v msg) ((!call assert () "assert table")))
+(!mdefine (v msg) ((!call assert () "assert table")))
 (!call is msg "assert table")
 
 (!call error_contains (!lambda () (!call assert !false "ASSERTION TEST"))
@@ -110,15 +110,15 @@ end
 (!call f)
 (!call is (!call (!index env "bar") "ok") "ok")
 
-(!define (f msg) ((!call load "?syntax error?" "errorchunk")))
+(!mdefine (f msg) ((!call load "?syntax error?" "errorchunk")))
 (!call is f !nil "function load(syntax error)")
 (!call contains msg "[string ")
 
-(!define (f msg) ((!call load "print 'ok'" "chunk txt" "b")))
+(!mdefine (f msg) ((!call load "print 'ok'" "chunk txt" "b")))
 (!call contains  msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
-(!define (f msg) ((!call load "\x1bLua" "chunk bin" "t")))
+(!mdefine (f msg) ((!call load "\x1bLua" "chunk bin" "t")))
 (!call contains  msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
@@ -134,7 +134,7 @@ end
 (!call f)
 (!call is (!call foo "ok") "ok")
 
-(!define (f msg) ((!call loadfile "foo.lua" "b")))
+(!mdefine (f msg) ((!call loadfile "foo.lua" "b")))
 (!call contains msg "attempt to load chunk with wrong mode")
 (!call is f !nil "mode")
 
@@ -146,14 +146,14 @@ end
 
 (!call unlink "foo.lua") ; clean up
 
-(!define (f msg) ((!call loadfile "no_file.lua")))
+(!mdefine (f msg) ((!call loadfile "no_file.lua")))
 (!call is f !nil "function loadfile (no file)")
 (!call is msg "cannot open no_file.lua: No such file or directory")
 
 (!define f (!call open "foo.lua" "w"))
 (!callmeth f write "?syntax error?")
 (!callmeth f close)
-(!define (f msg) ((!call loadfile "foo.lua")))
+(!mdefine (f msg) ((!call loadfile "foo.lua")))
 (!call is f !nil "function loadfile (syntax error)")
 (!call contains msg "unexpected symbol")
 (!call unlink "foo.lua") ; clean up
@@ -174,7 +174,7 @@ end
 (!call is (!call f) 33 "function loadstring")
 (!call is (!call g) 1)
 
-(!define (f msg) ((!call loadstring "?syntax error?")))
+(!mdefine (f msg) ((!call loadstring "?syntax error?")))
 (!call is f !nil "function loadstring (syntax error)")
 (!call contains msg "[string ")
 
@@ -209,7 +209,7 @@ end
 (!call is a !nil "function next (empty table)")
 
 (!define a ("a" "b" "c"))
-(!define (f v s) ((!call pairs a)))
+(!mdefine (f v s) ((!call pairs a)))
 (!call type_ok f "function" "function pairs")
 (!call type_ok v "table")
 (!call is s !nil)
@@ -225,7 +225,7 @@ end
 
 (!define r (!call pcall assert !true))
 (!call is r !true "function pcall")
-(!define (r msg) ((!call pcall assert !false "catched")))
+(!mdefine (r msg) ((!call pcall assert !false "catched")))
 (!call is r !false)
 (!call is msg "catched")
 (!define r (!call pcall assert))
@@ -372,7 +372,7 @@ end
 
 (!define backtrace (!lambda ()
                             (!return "not a back trace")))
-(!define (r msg) ((!call xpcall assert backtrace)))
+(!mdefine (r msg) ((!call xpcall assert backtrace)))
 (!call is r !false "function xpcall (backtrace)")
 (!call is msg "not a back trace")
 

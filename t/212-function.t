@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -62,7 +62,7 @@
                                 (!assign m val))))
                 (!return m mi)))
 
-(!define (m mi) ((!call maximum (8 10 23 12 5))))
+(!mdefine (m mi) ((!call maximum (8 10 23 12 5))))
 (!call is m 23 "maximum")
 (!call is mi 3)
 
@@ -119,7 +119,7 @@
 
 ;   var args
 (!let g (!lambda (a b !vararg)
-                (!define (c d e) (!vararg))
+                (!mdefine (c d e) (!vararg))
                 (!call is a 3 "var args")
                 (!call is b !nil)
                 (!call is c !nil)
@@ -128,7 +128,7 @@
 (!call g 3)
 
 (!let g (!lambda (a b !vararg)
-                (!define (c d e) (!vararg))
+                (!mdefine (c d e) (!vararg))
                 (!call is a 3)
                 (!call is b 4)
                 (!call is c !nil)
@@ -137,7 +137,7 @@
 (!call g 3 4)
 
 (!let g (!lambda (a b !vararg)
-                (!define (c d e) (!vararg))
+                (!mdefine (c d e) (!vararg))
                 (!call is a 3)
                 (!call is b 4)
                 (!call is c 5)
@@ -164,24 +164,24 @@
 (!let h (!lambda () (!return (!call f) "b")))
 (!let k (!lambda () (!return "c" (!call1 f))))
 
-(!define (x y) ((!call f)))
+(!mdefine (x y) ((!call f)))
 (!call is x 1 "var args")
 (!call is y 2)
-(!define (x y z) ((!call g)))
+(!mdefine (x y z) ((!call g)))
 (!call is x "a")
 (!call is y 1)
 (!call is z 2)
-(!define (x y) ((!call h)))
+(!mdefine (x y) ((!call h)))
 (!call is x 1)
 (!call is y "b")
-(!define (x y z) ((!call k)))
+(!mdefine (x y z) ((!call k)))
 (!call is x "c")
 (!call is y 1)
 (!call is z !nil)
 
 
 ;   invalid var args
-(!define (f msg) ((!call load "(!let f (!lambda () (!call println !vararg)))")))
+(!mdefine (f msg) ((!call load "(!let f (!lambda () (!call println !vararg)))")))
 (!call contains msg ": cannot use '!vararg' outside a vararg function" "invalid var args")
 
 ;   tail call

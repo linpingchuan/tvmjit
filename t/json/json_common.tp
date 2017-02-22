@@ -1,7 +1,7 @@
 
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 
 (!call (!index tvm "dofile") "TAP.tp")
@@ -104,7 +104,7 @@
         (!let f (!call (!index io "open") fname))
         (!let content (!callmeth f read "*a"))
         (!callmeth f close)
-        (!let (r msg) ((!call pcall parse content)))
+        (!mlet (r msg) ((!call pcall parse content)))
         (!if (!index TODO i) (!call todo content 1))
         (!call nok r fname)
 ;        (!if r (!call diag content))

@@ -1116,27 +1116,26 @@ end
 
 function P:localstat ()
     -- stat -> LOCAL NAME {`,' NAME} [`=' explist]
-    self.out[#self.out+1] = '(!define '
+    self.out[#self.out+1] = '(!mdefine ('
     local multi = false
     repeat
         local name = self:str_checkname()
         self.out[#self.out+1] = name
         if self.t.token == ',' then
-            if not multi then
-                multi = true
-                self.out[#self.out] = '('
-                self.out[#self.out+1] = name
-            end
+            multi = true
             self.out[#self.out+1] = ' '
         end
     until not self:testnext(',')
     if multi then
         self.out[#self.out+1] = ')'
+    else
+        self.out[#self.out-1] = '(!define '
     end
     if self:testnext('=') then
-        self.out[#self.out+1] = ' '
         if multi then
             self.out[#self.out+1] = '('
+        else
+            self.out[#self.out+1] = ' '
         end
         self:explist()
         if multi then

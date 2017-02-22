@@ -108,9 +108,9 @@ concatenation
 
 cond statement
 
-#### `(!define var [expr])` or `(!define (var1 ... varn) (expr1 ... exprm))`
+#### `(!define var [expr])`
 
-define local variables
+define local variable
 
 #### `(!div expr1 expr2)`
 
@@ -159,9 +159,9 @@ relational less or equal
 
 length
 
-#### `(!let var expr)` or `(!let (var1 ... varn) (expr1 ... exprm))`
+#### `(!let var expr)`
 
-define local variables which could not be re-assigned
+define local variable which could not be re-assigned
 
 #### `(!letrec var lambda)`
 
@@ -186,6 +186,14 @@ multiple assignment
 #### `(!mconcat expr1 ... exprn)`
 
 concatenation
+
+#### `(!mdefine (var1 ... varn) (expr1 ... exprm))`
+
+define local variables
+
+#### `(!mlet (var1 ... varn) (expr1 ... exprm))`
+
+define local variables which could not be re-assigned
 
 #### `(!mod expr1 expr2)`
 

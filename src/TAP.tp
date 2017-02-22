@@ -1,7 +1,7 @@
 
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 
 (!let _G _G)
@@ -161,21 +161,21 @@
                           (!call diag (!concat "    " msg2))))))
 
 (!assign (!index m "error_contains") (!lambda (code substring name)
-                (!let (r msg) ((!call pcall code)))
+                (!mlet (r msg) ((!call pcall code)))
                 (!if r
                      (!do (!call ok !false name)
                           (!call diag "    unexpected success"))
                      (!call (!index m "contains") msg substring name))))
 
 (!assign (!index m "error_like") (!lambda (code pattern name)
-                (!let (r msg) ((!call pcall code)))
+                (!mlet (r msg) ((!call pcall code)))
                 (!if r
                      (!do (!call ok !false name)
                           (!call diag "    unexpected success"))
                      (!call (!index m "like") msg pattern name))))
 
 (!assign (!index m "lives_ok") (!lambda (code name)
-                (!let (r msg) ((!call pcall code)))
+                (!mlet (r msg) ((!call pcall code)))
                 (!call ok r name)
                 (!if (!not r)
                      (!call diag (!concat " " msg)))))

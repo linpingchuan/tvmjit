@@ -1,7 +1,7 @@
 #!/usr/bin/tvmjit
 ;
 ;   TvmJIT : <http://github.com/fperrad/tvmjit/>
-;   Copyright (C) 2013-2014 Francois Perrad.
+;   Copyright (C) 2013-2017 Francois Perrad.
 ;
 ;   Major portions taken verbatim or adapted from the lua-TestMore library.
 ;   Copyright (c) 2009-2011 Francois Perrad
@@ -59,19 +59,19 @@
 (!define r (!call execute))
 (!call is r !true "function execute")
 
-(!define (r s n) ((!call execute "__IMPROBABLE__")))
+(!mdefine (r s n) ((!call execute "__IMPROBABLE__")))
 (!call is r !nil "function execute")
 (!call is s "exit")
 (!call type_ok n "number")
 
 (!define cmd (!concat exe " -e \"(!call print \\\"# hello from external tVM\\\")(!call (!index os \\\"exit\\\") 2)\""))
-(!define (r s n) ((!call execute cmd)))
+(!mdefine (r s n) ((!call execute cmd)))
 (!call is r !nil)
 (!call is s "exit" "function execute & exit")
 (!call is n 2 "exit value")
 
 (!define cmd (!concat exe " -e \"(!call print \\\"# hello from external tVM\\\")(!call (!index os \\\"exit\\\") !false)\""))
-(!define (r s n) ((!call execute cmd)))
+(!mdefine (r s n) ((!call execute cmd)))
 (!call is r !nil)
 (!call is s "exit" "function execute & exit")
 (!call is n 1 "exit value")
@@ -80,7 +80,7 @@
 (!call is (!call execute cmd) !true "function execute & exit")
 
 (!define cmd (!concat exe " -e \"(!call print \\\"reached\\\")(!call (!index os \\\"exit\\\"))(!call print \\\"not reached\\\")\""))
-(!define (r f) ((!call pcall popen cmd)))
+(!mdefine (r f) ((!call pcall popen cmd)))
 (!if r
      (!do (!call is (!callmeth f read) "reached" "function exit")
           (!call is (!callmeth f read) !nil)
@@ -89,11 +89,11 @@
      (!call skip "io.popen not supported" 3))
 
 (!define cmd (!concat exe " -e \"(!call print \\\"reached\\\")(!call (!index os \\\"exit\\\") 3)(!call print \\\"not reached\\\")\""))
-(!define (r f) ((!call pcall popen cmd)))
+(!mdefine (r f) ((!call pcall popen cmd)))
 (!if r
      (!do (!call is (!callmeth f read) "reached" "function exit")
           (!call is (!callmeth f read) !nil)
-          (!define (r s n) ((!callmeth f close)))
+          (!mdefine (r s n) ((!callmeth f close)))
           (!call is r !nil)
           (!call is s "exit" "exit code")
           (!call is n 3 "exit value"))
@@ -111,7 +111,7 @@
 (!define r (!call remove "./file.rm"))
 (!call is r !true "function remove")
 
-(!define (r msg) ((!call remove "./file.rm")))
+(!mdefine (r msg) ((!call remove "./file.rm")))
 (!call is r !nil "function remove")
 (!call contains msg "file.rm: No such file or directory")
 
@@ -123,7 +123,7 @@
 (!call is r !true "function rename")
 (!call remove "./file.new")        ; clean up
 
-(!define (r msg) ((!call rename "./file.old" "./file.new")))
+(!mdefine (r msg) ((!call rename "./file.old" "./file.new")))
 (!call is r !nil "function rename")
 (!call contains msg "file.old: No such file or directory")
 
