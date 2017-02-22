@@ -2295,8 +2295,8 @@ static void parse_callmeth(LexState *ls, ExpDesc *v)
   bcemit_call(fs, v, &args);
 }
 
-/* Parse 'mlet' statement. */
-static void parse_mlet (LexState *ls, int final)
+/* Parse 'mdefine' statement. */
+static void parse_mdefine (LexState *ls)
 {
   size_t nvars, nexps;
   ExpDesc e;
@@ -2304,13 +2304,11 @@ static void parse_mlet (LexState *ls, int final)
   nvars = 0;
   while (!lex_opt(ls, ')')) {
     GCstr *varname = lex_str(ls);
-    var_new(ls, nvars, varname, final);
+    var_new(ls, nvars, varname, 0);
     nvars++;
   }
   if (lex_opt(ls, ')')) {
     nexps = 0;
-    if (final)
-      err_syntax(ls, LJ_ERR_XEXPR);
     e.k = VVOID;
   } else {
     lex_check(ls, '(');
@@ -2321,17 +2319,15 @@ static void parse_mlet (LexState *ls, int final)
   var_add(ls, nvars);
 }
 
-/* Parse 'let' statement. */
-static void parse_let (LexState *ls, int final)
+/* Parse 'define' statement. */
+static void parse_define (LexState *ls)
 {
   size_t nexps;
   ExpDesc e;
   GCstr *varname = lex_str(ls);
-  var_new(ls, 0, varname, final);
+  var_new(ls, 0, varname, 0);
   if (lex_opt(ls, ')')) {
     nexps = 0;
-    if (final)
-      err_syntax(ls, LJ_ERR_XEXPR);
     e.k = VVOID;
   } else {
     expr(ls, &e);
@@ -2339,6 +2335,37 @@ static void parse_let (LexState *ls, int final)
     lex_check(ls, ')');
   }
   assign_adjust(ls, 1, nexps, &e);
+  var_add(ls, 1);
+}
+
+/* Parse 'mlet' statement. */
+static void parse_mlet (LexState *ls)
+{
+  size_t nvars, nexps;
+  ExpDesc e;
+  lex_check(ls, '(');
+  nvars = 0;
+  while (!lex_opt(ls, ')')) {
+    GCstr *varname = lex_str(ls);
+    var_new(ls, nvars, varname, 1);
+    nvars++;
+  }
+  lex_check(ls, '(');
+  nexps = expr_list(ls, &e);
+  lex_check(ls, ')');
+  assign_adjust(ls, nvars, nexps, &e);
+  var_add(ls, nvars);
+}
+
+/* Parse 'let' statement. */
+static void parse_let (LexState *ls)
+{
+  ExpDesc e;
+  GCstr *varname = lex_str(ls);
+  var_new(ls, 0, varname, 1);
+  expr(ls, &e);
+  lex_check(ls, ')');
+  assign_adjust(ls, 1, 1, &e);
   var_add(ls, 1);
 }
 
@@ -2726,7 +2753,7 @@ gen_setoneret:
 	  parse_do(ls, v);
 	  break;
 	case SP_define:
-	  parse_let(ls, 0);
+	  parse_define(ls);
 	  break;
 	case SP_for:
 	  parse_for(ls);
@@ -2747,7 +2774,7 @@ gen_setoneret:
 	  parse_lambda(ls, v);
 	  break;
 	case SP_let:
-	  parse_let(ls, 1);
+	  parse_let(ls);
 	  break;
 	case SP_letrec:
 	  parse_letrec(ls);
@@ -2766,10 +2793,10 @@ gen_setoneret:
 	  parse_mconcat(ls, v);
 	  break;
 	case SP_mdefine:
-	  parse_mlet(ls, 0);
+	  parse_mdefine(ls);
 	  break;
 	case SP_mlet:
-	  parse_mlet(ls, 1);
+	  parse_mlet(ls);
 	  break;
 	case SP_repeat:
 	  parse_repeat(ls);
