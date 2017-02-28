@@ -2531,7 +2531,8 @@ static void parse_repeat(LexState *ls)
   if (!(bl2.flags & FSCOPE_UPVAL)) {  /* No upvalues? Just end inner scope. */
     fscope_end(fs);
   } else {  /* Otherwise generate: cond: UCLO+JMP out, !cond: UCLO+JMP loop. */
-    parse_break(ls);  /* Break from loop and close upvalues. */
+    fs->bl->flags |= FSCOPE_BREAK; /* Break from loop and close upvalues. */
+    gola_new(ls, NAME_BREAK, VSTACK_GOTO, bcemit_jmp(fs));
     jmp_tohere(fs, condexit);
     fscope_end(fs);  /* End inner scope and close upvalues. */
     condexit = bcemit_jmp(fs);
