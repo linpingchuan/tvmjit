@@ -104,7 +104,7 @@ method call; if method returns multiple results, only first is retained
 
 concatenation
 
-#### `(!cond (expr1 (stmt1 ... stmtm)) ... (exprn (stmt1 ... stmtm)))`
+#### `(!cond (expr1 stmt1 ... stmtm) ... (exprn stmt1 ... stmtm))`
 
 cond statement
 
