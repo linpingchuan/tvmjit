@@ -16,7 +16,7 @@ local setmetatable = setmetatable
 local tostring = tostring
 local type = type
 local tconcat = table.concat
-local unpack = table.unpack or unpack
+local unpack = table.unpack or unpack   -- luacheck: compat
 local _G = _G
 
 _ENV = nil
