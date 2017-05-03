@@ -1,6 +1,6 @@
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 --
@@ -19,7 +19,7 @@ local compiler = dofile 'nqp/compiler.tp'
 local target;
 
 local function print_version ()
-    print "nqp/TvmJIT\tCopyright (C) 2013-2014 Francois Perrad"
+    print "nqp/TvmJIT\tCopyright (C) 2013-2017 Francois Perrad"
 end
 
 local function handle_script (argv, script)

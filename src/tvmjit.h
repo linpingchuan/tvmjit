@@ -1,6 +1,6 @@
 /*
 ** TvmJIT
-** Copyright (C) 2013-2015 Francois Perrad.
+** Copyright (C) 2013-2017 Francois Perrad.
 */
 
 #ifndef _TVMJIT_H
@@ -11,6 +11,6 @@
 
 #define TVMJIT_VERSION		"TvmJIT 0.2.0"
 #define TVMJIT_VERSION_NUM	000200  /* Version 0.2.0 = 00_02_00 */
-#define TVMJIT_COPYRIGHT	"Copyright (C) 2012-2015 Francois Perrad"
+#define TVMJIT_COPYRIGHT	"Copyright (C) 2012-2017 Francois Perrad"
 
 #endif

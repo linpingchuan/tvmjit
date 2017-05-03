@@ -1,7 +1,7 @@
 
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2016 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 --
 --  see http://lolcode.com/specs/1.2

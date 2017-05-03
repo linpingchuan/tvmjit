@@ -1,6 +1,6 @@
 --
 --  TvmJIT : <http://github.com/fperrad/tvmjit/>
---  Copyright (C) 2013-2014 Francois Perrad.
+--  Copyright (C) 2013-2017 Francois Perrad.
 --
 
 --
@@ -15,7 +15,7 @@ local unpack = unpack
 local compiler = _G._COMPILER
 
 local function print_version ()
-    print "Lua/TvmJIT\tCopyright (C) 2013-2014 Francois Perrad"
+    print "Lua/TvmJIT\tCopyright (C) 2013-2017 Francois Perrad"
 end
 
 local function dostring (chunk, name)

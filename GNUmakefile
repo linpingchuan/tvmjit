@@ -10,7 +10,7 @@
 # For MSVC, please follow the instructions given in src/msvcbuild.bat.
 # For MinGW and Cygwin, cd to src and run make with the Makefile there.
 #
-# Copyright (C) 2013-2015 Francois Perrad.
+# Copyright (C) 2013-2017 Francois Perrad.
 #
 # Major portions taken verbatim or adapted from the LuaJIT.
 # Copyright (C) 2005-2017 Mike Pall.

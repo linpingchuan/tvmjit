@@ -1,6 +1,6 @@
 /*
 ** Configuration header.
-** Copyright (C) 2013-2015 Francois Perrad.
+** Copyright (C) 2013-2017 Francois Perrad.
 */
 
 #ifndef tvmconf_h
@@ -33,7 +33,7 @@
 #endif
 #define LUA_LROOT	"/usr/local"
 #define LUA_LUADIR	"/lua/5.1/"
-#define TVM_TJDIR	"/tvmjit-0.1.3/"
+#define TVM_TJDIR	"/tvmjit-0.2.0/"
 
 #ifdef TVM_ROOT
 #define TVM_JROOT	TVM_ROOT

@@ -1,6 +1,6 @@
 /*
 ** Load and dump code.
-** Copyright (C) 2013-2015 Francois Perrad.
+** Copyright (C) 2013-2017 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
 ** Copyright (C) 2005-2017 Mike Pall.
