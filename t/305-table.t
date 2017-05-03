@@ -15,6 +15,7 @@
 (!let remove (!index table "remove"))
 (!let sort (!index table "sort"))
 (!let unpack (!index table "unpack"))
+(!let move (!index table "move"))
 (!let pairs pairs)
 
 (!let plan plan)
@@ -22,7 +23,7 @@
 (!let eq_array eq_array)
 (!let error_contains error_contains)
 
-(!call plan 39)
+(!call plan 46)
 
 (!define t ("a" "b" "c" "d" "e"))
 (!call is (!call concat t) "abcde" "function concat")
@@ -136,3 +137,26 @@
 (!call eq_array ((!call unpack ("a" "b" "c" "d" "e") 2 4)) ("b" "c" "d"))
 (!call eq_array ((!call unpack ("a" "b" "c") 2 4)) ("b" "c"))
 
+(!define a ("a" "b" "c"))
+(!define t (1 2 3 4))
+(!call move a 1 3 1 t)
+(!call eq_array t ("a" "b" "c" 4) "function move")
+(!call move a 1 3 3 t)
+(!call eq_array t ("a" "b" "a" "b" "c"))
+
+(!call move a 1 3 1)
+(!call eq_array a ("a" "b" "c"))
+(!call move a 1 3 3)
+(!call eq_array a ("a" "b" "a" "b" "c"))
+
+(!call error_contains (!lambda () (!call move a 1 2 1 2))
+                      ": bad argument #5 to 'move' (table expected"
+                      "function move (bad arg)")
+
+(!call error_contains (!lambda () (!call move a 1 2))
+                      ": bad argument #4 to 'move' (number expected"
+                      "function move (bad arg)")
+
+(!call error_contains (!lambda () (!call move a 1))
+                      ": bad argument #3 to 'move' (number expected"
+                      "function move (bad arg)")

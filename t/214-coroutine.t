@@ -23,7 +23,7 @@
 (!let eq_array eq_array)
 (!let type_ok type_ok)
 
-(!call plan 30)
+(!call plan 31)
 
 ;
 (!define output ())
@@ -159,4 +159,6 @@
 ;
 (!call error_contains (!lambda () (!call (!index coroutine "yield")))
                       "attempt to yield")
+
+(!call is (!call (!index coroutine "isyieldable")) !false "isyieldable")
 

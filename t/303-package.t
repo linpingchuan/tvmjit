@@ -13,7 +13,7 @@
 (!let ok ok)
 (!let type_ok type_ok)
 
-(!call plan 23)
+(!call plan 24)
 
 (!call ok (!index (!index package "loaded") "_G") "table package.loaded")
 (!call ok (!index (!index package "loaded") "coroutine"))
@@ -32,6 +32,7 @@
 (!call is (!len (!index package "preload")) 0)
 
 (!call type_ok (!index package "loaders") "table" "table package.loaders")
+(!call is (!index package "searchers") (!index package "loaders") "table package.searchers")
 
 (!let m (!call require "linenoise"))
 (!call (!index m "historyadd") "line")
