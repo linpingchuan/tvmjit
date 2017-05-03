@@ -623,7 +623,7 @@ depend:
 	  done
 
 luacheck:
-	luacheck *.lua json/*.lua lua/*.lua
+	luacheck *.lua host/*.lua jit/*.lua json/*.lua lua/*.lua
 
 .PHONY: default all amalg clean depend
 
