@@ -3,7 +3,7 @@
 ** Copyright (C) 2013-2017 Francois Perrad.
 **
 ** Major portions taken verbatim or adapted from the LuaJIT.
-** Copyright (C) 2005-2016 Mike Pall.
+** Copyright (C) 2005-2017 Mike Pall.
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio.
 */
@@ -1315,12 +1315,14 @@ static void fscope_end(FuncState *fs)
       MSize idx = gola_new(ls, NAME_BREAK, VSTACK_LABEL, fs->pc);
       ls->vtop = idx;  /* Drop break label immediately. */
       gola_resolve(ls, bl, idx);
+    } else {  /* Need the fixup step to propagate the breaks. */
+      gola_fixup(ls, bl);
       return;
-    }  /* else: need the fixup step to propagate the breaks. */
-  } else if (!(bl->flags & FSCOPE_GOLA)) {
-    return;
+    }
   }
-  gola_fixup(ls, bl);
+  if ((bl->flags & FSCOPE_GOLA)) {
+    gola_fixup(ls, bl);
+  }
 }
 
 /* Mark scope as having an upvalue. */
@@ -2184,6 +2186,8 @@ static void assign_adjust(LexState *ls, BCReg nvars, BCReg nexps, ExpDesc *e)
       bcemit_nil(fs, reg, (BCReg)extra);
     }
   }
+  if (nexps > nvars)
+    ls->fs->freereg -= nexps - nvars;  /* Drop leftover regs. */
 }
 
 static void checkfinal(LexState *ls, ExpDesc *v)
@@ -2229,8 +2233,6 @@ static void parse_assignment_(LexState *ls, LHSVarList *lh, BCReg nvars)
       return;
     }
     assign_adjust(ls, nvars, nexps, &e);
-    if (nexps > nvars)
-      ls->fs->freereg -= nexps - nvars;  /* Drop leftover regs. */
   }
   /* Assign RHS to LHS and recurse downwards. */
   expr_init(&e, VNONRELOC, ls->fs->freereg-1);

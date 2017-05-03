@@ -13,13 +13,14 @@
 # Copyright (C) 2013-2015 Francois Perrad.
 #
 # Major portions taken verbatim or adapted from the LuaJIT.
-# Copyright (C) 2005-2016 Mike Pall.
+# Copyright (C) 2005-2017 Mike Pall.
 ##############################################################################
 
 MAJVER=  0
 MINVER=  2
 RELVER=  0
-VERSION= $(MAJVER).$(MINVER).$(RELVER)-beta1
+PREREL=  -beta3
+VERSION= $(MAJVER).$(MINVER).$(RELVER)$(PREREL)
 ABIVER=  5.1
 
 ##############################################################################
@@ -50,17 +51,18 @@ INSTALL_PKGCONFIG= $(INSTALL_LIB)/pkgconfig
 INSTALL_TNAME= tvmjit-$(VERSION)
 INSTALL_TSYMNAME= tvmjit
 INSTALL_ANAME= libtvmjit-$(ABIVER).a
-INSTALL_SONAME= libtvmjit-$(ABIVER).so.$(MAJVER).$(MINVER).$(RELVER)
-INSTALL_SOSHORT= libtvmjit-$(ABIVER).so
-INSTALL_DYLIBNAME= libtvmjit-$(ABIVER).$(MAJVER).$(MINVER).$(RELVER).dylib
+INSTALL_SOSHORT1= libtvmjit-$(ABIVER).so
+INSTALL_SOSHORT2= libtvmjit-$(ABIVER).so.$(MAJVER)
+INSTALL_SONAME= $(INSTALL_SOSHORT2).$(MINVER).$(RELVER)
 INSTALL_DYLIBSHORT1= libtvmjit-$(ABIVER).dylib
 INSTALL_DYLIBSHORT2= libtvmjit-$(ABIVER).$(MAJVER).dylib
+INSTALL_DYLIBNAME= libtvmjit-$(ABIVER).$(MAJVER).$(MINVER).$(RELVER).dylib
 INSTALL_PCNAME= tvmjit.pc
 
 INSTALL_STATIC= $(INSTALL_LIB)/$(INSTALL_ANAME)
 INSTALL_DYN= $(INSTALL_LIB)/$(INSTALL_SONAME)
-INSTALL_SHORT1= $(INSTALL_LIB)/$(INSTALL_SOSHORT)
-INSTALL_SHORT2= $(INSTALL_LIB)/$(INSTALL_SOSHORT)
+INSTALL_SHORT1= $(INSTALL_LIB)/$(INSTALL_SOSHORT1)
+INSTALL_SHORT2= $(INSTALL_LIB)/$(INSTALL_SOSHORT2)
 INSTALL_T= $(INSTALL_BIN)/$(INSTALL_TNAME)
 INSTALL_TSYM= $(INSTALL_BIN)/$(INSTALL_TSYMNAME)
 INSTALL_PC= $(INSTALL_PKGCONFIG)/$(INSTALL_PCNAME)
@@ -88,17 +90,23 @@ FILE_MAN= tvmjit.1
 FILE_PC= tvmjit.pc
 FILES_INC= lua.h lualib.h lauxlib.h luaconf.h lua.hpp luajit.h tvmjit.h tvmconf.h
 FILES_JITLIB= bc.lua bcsave.lua dump.lua p.lua v.lua zone.lua \
-	      dis_x86.lua dis_x64.lua dis_arm.lua dis_ppc.lua \
-	      dis_mips.lua dis_mipsel.lua vmdef.lua
+	      dis_x86.lua dis_x64.lua dis_arm.lua dis_arm64.lua \
+	      dis_arm64be.lua dis_ppc.lua dis_mips.lua dis_mipsel.lua \
+	      dis_mips64.lua dis_mips64el.lua vmdef.lua
 FILES_LUALIB= lunokhod.lua
 
 ifeq (,$(findstring Windows,$(OS)))
-  ifeq (Darwin,$(shell uname -s))
-    INSTALL_SONAME= $(INSTALL_DYLIBNAME)
-    INSTALL_SHORT1= $(INSTALL_LIB)/$(INSTALL_DYLIBSHORT1)
-    INSTALL_SHORT2= $(INSTALL_LIB)/$(INSTALL_DYLIBSHORT2)
-    LDCONFIG= :
-  endif
+  HOST_SYS:= $(shell uname -s)
+else
+  HOST_SYS= Windows
+endif
+TARGET_SYS?= $(HOST_SYS)
+
+ifeq (Darwin,$(TARGET_SYS))
+  INSTALL_SONAME= $(INSTALL_DYLIBNAME)
+  INSTALL_SOSHORT1= $(INSTALL_DYLIBSHORT1)
+  INSTALL_SOSHORT2= $(INSTALL_DYLIBSHORT2)
+  LDCONFIG= :
 endif
 
 ##############################################################################

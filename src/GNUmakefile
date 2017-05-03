@@ -10,7 +10,7 @@
 # Copyright (C) 2013-2015 Francois Perrad.
 #
 # Major portions taken verbatim or adapted from the LuaJIT.
-# Copyright (C) 2005-2016 Mike Pall.
+# Copyright (C) 2005-2017 Mike Pall.
 ##############################################################################
 
 MAJVER=  0
@@ -113,6 +113,9 @@ XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
 #XCFLAGS+= -DLUAJIT_NUMMODE=1
 #XCFLAGS+= -DLUAJIT_NUMMODE=2
 #
+# Enable GC64 mode for x64.
+#XCFLAGS+= -DLUAJIT_ENABLE_GC64
+#
 ##############################################################################
 
 ##############################################################################
@@ -124,8 +127,8 @@ XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
 #
 # Use the system provided memory allocator (realloc) instead of the
 # bundled memory allocator. This is slower, but sometimes helpful for
-# debugging. This option cannot be enabled on x64, since realloc usually
-# doesn't return addresses in the right address range.
+# debugging. This option cannot be enabled on x64 without GC64, since
+# realloc usually doesn't return addresses in the right address range.
 # OTOH this option is mandatory for Valgrind's memcheck tool on x64 and
 # the only way to get useful results from it for all other architectures.
 #XCFLAGS+= -DLUAJIT_USE_SYSMALLOC
@@ -169,10 +172,6 @@ else
     HOST_SYS= Windows
     HOST_MSYS= cygwin
   endif
-  # Use Clang for OSX host.
-  ifeq (Darwin,$(HOST_SYS))
-    DEFAULT_CC= clang
-  endif
 endif
 
 ##############################################################################
@@ -213,7 +212,7 @@ TARGET_CC= $(STATIC_CC)
 TARGET_STCC= $(STATIC_CC)
 TARGET_DYNCC= $(DYNAMIC_CC)
 TARGET_LD= $(CROSS)$(CC)
-TARGET_AR= $(CROSS)ar rcus
+TARGET_AR= $(CROSS)ar rcus 2>/dev/null
 TARGET_STRIP= $(CROSS)strip
 
 TARGET_LIBPATH= $(or $(PREFIX),/usr/local)/$(or $(MULTILIB),lib)
@@ -246,6 +245,9 @@ ifneq (,$(findstring LJ_TARGET_ARM ,$(TARGET_TESTARCH)))
   TARGET_LJARCH= arm
 else
 ifneq (,$(findstring LJ_TARGET_ARM64 ,$(TARGET_TESTARCH)))
+  ifneq (,$(findstring __AARCH64EB__ ,$(TARGET_TESTARCH)))
+    TARGET_ARCH= -D__AARCH64EB__=1
+  endif
   TARGET_LJARCH= arm64
 else
 ifneq (,$(findstring LJ_TARGET_PPC ,$(TARGET_TESTARCH)))
@@ -260,7 +262,11 @@ ifneq (,$(findstring LJ_TARGET_MIPS ,$(TARGET_TESTARCH)))
   ifneq (,$(findstring MIPSEL ,$(TARGET_TESTARCH)))
     TARGET_ARCH= -D__MIPSEL__=1
   endif
-  TARGET_LJARCH= mips
+  ifneq (,$(findstring LJ_TARGET_MIPS64 ,$(TARGET_TESTARCH)))
+    TARGET_LJARCH= mips64
+  else
+    TARGET_LJARCH= mips
+  endif
 else
   $(error Unsupported target architecture)
 endif
@@ -313,7 +319,6 @@ ifeq (Darwin,$(TARGET_SYS))
     export MACOSX_DEPLOYMENT_TARGET=10.4
   endif
   TARGET_STRIP+= -x
-  TARGET_AR+= 2>/dev/null
   TARGET_XSHLDFLAGS= -dynamiclib -single_module -undefined dynamic_lookup -fPIC
   TARGET_DYNXLDOPTS=
   TARGET_XSHLDFLAGS+= -install_name $(TARGET_DYLIBPATH) -compatibility_version $(MAJVER).$(MINVER) -current_version $(MAJVER).$(MINVER).$(RELVER)
@@ -324,7 +329,6 @@ ifeq (Darwin,$(TARGET_SYS))
 else
 ifeq (iOS,$(TARGET_SYS))
   TARGET_STRIP+= -x
-  TARGET_AR+= 2>/dev/null
   TARGET_XSHLDFLAGS= -dynamiclib -single_module -undefined dynamic_lookup -fPIC
   TARGET_DYNXLDOPTS=
   TARGET_XSHLDFLAGS+= -install_name $(TARGET_DYLIBPATH) -compatibility_version $(MAJVER).$(MINVER) -current_version $(MAJVER).$(MINVER).$(RELVER)

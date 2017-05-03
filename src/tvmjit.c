@@ -3,7 +3,7 @@
 ** Copyright (C) 2013-2015 Francois Perrad.
 **
 ** Major parts taken verbatim from the LuaJIT.
-** Copyright (C) 2005-2016 Mike Pall.
+** Copyright (C) 2005-2017 Mike Pall.
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio.
 */
@@ -131,7 +131,7 @@ static int docall(lua_State *L, int narg, int clear)
 #endif
   lua_remove(L, base);  /* remove traceback function */
   /* force a complete garbage collection in case of errors */
-  if (status != 0) lua_gc(L, LUA_GCCOLLECT, 0);
+  if (status != LUA_OK) lua_gc(L, LUA_GCCOLLECT, 0);
   return status;
 }
 
@@ -532,16 +532,16 @@ static int pmain(lua_State *L)
   }
   lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
   luaL_openlibs(L);  /* open libraries */
-  s->status = tvm_loadbufferx(L, luaJIT_BC_op, luaJIT_BC_op_SIZE, "op", "b")
+  s->status = tvm_loadbufferx(L, (const char *)luaJIT_BC_op, luaJIT_BC_op_SIZE, "op", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
-  s->status = tvm_loadbufferx(L, luaJIT_BC_parse, luaJIT_BC_parse_SIZE, "parse", "b")
+  s->status = tvm_loadbufferx(L, (const char *)luaJIT_BC_parse, luaJIT_BC_parse_SIZE, "parse", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
-  s->status = tvm_loadbufferx(L, luaJIT_BC_lunokhod, luaJIT_BC_lunokhod_SIZE, "lunokhod", "b")
+  s->status = tvm_loadbufferx(L, (const char *)luaJIT_BC_lunokhod, luaJIT_BC_lunokhod_SIZE, "lunokhod", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
-  s->status = tvm_loadbufferx(L, luaJIT_BC_op53, luaJIT_BC_op53_SIZE, "op53", "b")
+  s->status = tvm_loadbufferx(L, (const char *)luaJIT_BC_op53, luaJIT_BC_op53_SIZE, "op53", "b")
            || docall(L, 0, 1);
   if (s->status != 0) return 0;
   lua_gc(L, LUA_GCRESTART, -1);
