@@ -1,11 +1,15 @@
 language: c
 compiler: gcc
 
+addons:
+  apt:
+    packages:
+    - lua5.1
+    - liblua5.1-0-dev
+    - luarocks
+
 # Tool setup.
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq lua5.1 liblua5.1-0-dev
-  - sudo apt-get install -qq luarocks
   - sudo luarocks install lpeg
   - sudo luarocks install linenoise
   - sudo luarocks install luacheck
